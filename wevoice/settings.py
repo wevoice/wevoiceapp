@@ -77,9 +77,9 @@ WSGI_APPLICATION = 'wevoice.wsgi.application'
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 DATABASES = {
                'default': {
-                    'ENGINE': 'django.db.backends.mysql',
-                    'NAME': 'djangowevoice',
-                    'USER': 'root',
+                    'ENGINE': 'django.db.backends.postgresql',
+                    'NAME': 'wevoicetest',
+                    'USER': 'wevoiceadmin',
                     'PASSWORD': 'Welo!',
                     'HOST': '',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
                     'PORT': '',  # Set to empty string for default.

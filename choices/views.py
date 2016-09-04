@@ -15,4 +15,3 @@ def detail(request, question_id):
     except models.Question.DoesNotExist:
         raise Http404("Question does not exist")
     return render(request, 'detail.html', {'question': question})
-
