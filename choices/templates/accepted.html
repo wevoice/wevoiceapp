@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Welocalize // wevoice</title>
+{% load static %}
+<link href="{% static "main.css" %}" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="{% static "simpleplayer.css" %}" type="text/css">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
+<script type="text/javascript" src="{% static "jquery/jquery.simpleplayer.min.js" %}"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var settings = {
+            progressbarWidth: '50px',
+            progressbarHeight: '5px',
+            progressbarColor: '#22ccff',
+            progressbarBGColor: '#eeeeee',
+            defaultVolume: 0.8
+        };
+        $(".player").player(settings);
+    });
+</script>
+</head>
+
+<body>
+<table width="1000" border="0" cellpadding="0" cellspacing="0" class="maintable">
+  <tr>
+    <td>
+    	<table width="100%" border="0" cellpadding="0" cellspacing="0" class="topheader">
+       		<tr>
+          		<td style="text-align:left"><img src="{% static "logo_h45.png" %}" width="184" height="45" alt=""/></td>
+          		<td style="text-align:center" width="17%"><a href="/apple/for_approval" class="aclient">FOR APPROVAL</a></td>
+          		<td style="text-align:center" width="17%">ACCEPTED</td>
+          		<td style="text-align:center" width="17%"><a href="/apple/rejected" class="aclient">REJECTED</a></td>
+          		<td style="text-align:center" width="17%"><a href="/" class="aclient">LOG OUT</a></td>
+        	</tr>
+      	</table>
+        <table width="1000" border="0" cellpadding="0" cellspacing="0" class="maintable">
+          <tr>
+            <td style="text-align:right; background-color: #FFFFFF" class="copyright">&copy; 2014 Welocalize | <a href="mailto:wevoice@welocalize.com">Contact Us</a>&nbsp;&nbsp;</td>
+          </tr>
+        </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

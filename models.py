@@ -1,0 +1,314 @@
+# This is an auto-generated Django model module.
+# You'll have to do the following manually to clean this up:
+#   * Rearrange models' order
+#   * Make sure each model has one field with primary_key=True
+#   * Make sure each ForeignKey has `on_delete` set to the desired behavior.
+#   * Remove `` lines if you wish to allow Django to create, modify, and delete the table
+# Feel free to rename the models, but don't rename db_table values or field names.
+from __future__ import unicode_literals
+
+from django.db import models
+
+
+class Admin(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    username = models.TextField()
+    password = models.TextField()
+
+    class Meta:
+        db_table = 'admin'
+
+
+class Anheuserbusch(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'anheuserbusch'
+
+
+class Apple(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'apple'
+
+
+class Cisco(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'cisco'
+
+
+class Client(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.TextField()
+    username = models.TextField()
+    password = models.TextField()
+
+    class Meta:
+        db_table = 'client'
+
+
+class DjangoMigrations(models.Model):
+    app = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    applied = models.DateTimeField()
+
+    class Meta:
+        db_table = 'django_migrations'
+
+
+class Esterline(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'esterline'
+
+
+class Google(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'google'
+
+
+class Gt(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'gt'
+
+
+class Hd(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'hd'
+
+
+class Jdeere(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'jdeere'
+
+
+class Kornferry(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'kornferry'
+
+
+class Language(models.Model):
+    id = models.BigAutoField(unique=True)
+    language = models.TextField()
+
+    class Meta:
+        db_table = 'language'
+
+
+class Main(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'main'
+
+
+class Nrm(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'nrm'
+
+
+class Resaas(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'resaas'
+
+
+class Talent(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    welo_id = models.TextField()
+    vendor_id = models.TextField()
+    vendor_name = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    pre_approved = models.TextField()
+    comment = models.TextField()
+    allclients = models.TextField()
+    vmware = models.TextField()
+    google = models.TextField()
+    gt = models.TextField()
+    nrm = models.TextField()
+    hr = models.TextField()
+    rate = models.TextField()
+    hd = models.TextField()
+    workday = models.TextField()
+    tts = models.TextField()
+    cisco = models.TextField()
+    kornferry = models.TextField()
+    jdeere = models.TextField()
+    anheuserbusch = models.TextField()
+    apple = models.TextField()
+    thomsonreuters = models.TextField()
+    esterline = models.TextField()
+
+    class Meta:
+        db_table = 'talent'
+
+
+class Thomsonreuters(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'thomsonreuters'
+
+
+class Vendor(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.TextField()
+    username = models.TextField()
+    password = models.TextField()
+
+    class Meta:
+        db_table = 'vendor'
+
+
+class Vmware(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'vmware'
+
+
+class Workday(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    talent = models.TextField()
+    client = models.TextField()
+    gender = models.TextField()
+    age_range = models.TextField()
+    language = models.TextField()
+    sample_url = models.TextField()
+    accepted = models.TextField()
+    comment = models.TextField()
+
+    class Meta:
+        db_table = 'workday'

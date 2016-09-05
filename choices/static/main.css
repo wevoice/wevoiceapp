@@ -1,0 +1,285 @@
+@charset "UTF-8";
+/* Welocalize Branding colors
+	Orange: #DD4F05
+	Grey: #8C8984
+	Black: #363534
+	White: #FFFFFF
+*/
+
+body
+	{
+		font-family:"Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", "DejaVu Sans", Verdana, sans-serif;
+		color: #FFFFFF;
+		background-color:#000000;
+	}
+
+a
+	{
+		color: #DD4F05;
+		text-decoration:none;
+	}
+
+.aclient
+	{
+		font-weight: bold;
+		color: #363534;
+
+	}
+
+.aclient:hover
+	{
+		font-weight: bold;
+		color: #DD4F05;
+	}
+
+table
+	{
+		border:0;
+		padding:0;
+		margin-left:auto;
+		margin-right:auto;
+		align-self:center;
+	}
+
+td, th
+	{
+		padding:0;
+	}
+
+tr
+	{
+		line-height:10px;
+		height:10px;
+	}
+
+.maintable
+	{
+		background-image:url(../static/wpapermic.jpg);
+	}
+
+.signintable
+	{
+		background-color: #FFFFFF;
+		text-align: center;
+		color: #363534;
+	}
+
+.inputboxes01
+	{
+		border: 2px solid #8C8984;
+		border-radius: 5px;
+		height: 20px;
+		width: 290px;
+	}
+
+.inputboxes02
+	{
+		border: 2px solid #8C8984;
+		border-radius: 5px;
+		height: 20px;
+		width: 290px;
+		text-transform:uppercase;
+	}
+
+.uploadbox01
+	{
+		height: 20px;
+		width: 290px;
+	}
+
+.submitboxes01
+	{
+		border: 2px solid #DD4F05;
+		border-radius: 5px;
+		height: 25px;
+		width: 100px;
+		background-color: #DD4F05;
+		color: #FFFFFF;
+		font-weight: bold;
+	}
+
+.submitboxes02
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 25px;
+		background-color: #8C8984;
+		color: #000000;
+		font-size: 7px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+	}
+
+.submitboxes02-45
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 35px;
+		background-color: #8C8984;
+		color: #000000;
+		font-size: 7px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+	}
+
+.submitboxes02active
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 25px;
+		background-color: #DD4F05;
+		color: #000000;
+		font-size: 7px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+	}
+
+.submitboxes02-45active
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 35px;
+		background-color: #DD4F05;
+		color: #000000;
+		font-size: 7px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+	}
+
+.submitboxes02allclients
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 20px;
+		background-color: #8C8984;
+		color: #000000;
+		font-size: 7px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+	}
+
+.submitboxes02allclientsactive
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 20px;
+		background-color: #DD4F05;
+		color: #000000;
+		font-size: 7px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+	}
+
+.submitboxes03
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 60px;
+		background-color: #8C8984;
+		color: #000000;
+		font-size: 9px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+	}
+
+.submitboxes03active
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 60px;
+		background-color: #DD4F05;
+		color: #000000;
+		font-size: 9px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+	}
+
+.submitboxes04
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 80px;
+		background-color: #8C8984;
+		color: #000000;
+		font-size: 9px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+	}
+
+.comment01
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 350px;
+		background-color: #eeeeee;
+		color: #000000;
+		font-size: 9px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:left;
+	}
+
+.topheader
+	{
+		background-image:url(../static/50percent.png);
+	}
+
+.copyright
+	{
+		color: #DD4F05;
+		font-size: 10px;
+		font-weight: bold;
+		text-transform: uppercase;
+	}
+
+.talent_admin_table_header
+	{
+		background-image:url(../static/50percentwelo.png);
+		text-align:center;
+		font-size:9px;
+		text-transform:uppercase;
+		font-weight:bold;
+		border: 1px solid #8C8984;
+		vertical-align: middle;
+	}
+
+.image_refresh
+	{
+		vertical-align: middle;
+		background:url(../static/comment_refresh1.png) no-repeat;
+    	width: 16px;
+    	height: 16px;
+    	border: none;
+
+	}
+
+.talent_admin_table
+	{
+		font-size:9px;
+		border: 1px solid #8C8984;
+		vertical-align: middle;
+		line-height:15px;
+	}
+
+.talent_admin_table_left
+	{
+		font-size:9px;
+		border: 1px solid #8C8984;
+		vertical-align: middle;
+		text-align:left;
+		line-height:15px;
+	}
+
+.download_button {
+    vertical-align: middle;
+	border: none;
+}

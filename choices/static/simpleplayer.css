@@ -1,0 +1,32 @@
+.simple-player-container {
+    display: inline-block;
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    border-radius: 0;
+}
+.simple-player-container > div > ul {
+    margin: 0;
+    padding-left: 0;
+}
+.simpleplayer-play-control {
+    background-image: url('../static/play.png');
+    display: block;
+    width: 16px;
+    height: 16px;
+    bottom: -5px;
+    position: relative;
+}
+.simpleplayer-play-control:hover {
+    background-image: url('../static/playing.png');
+}
+.simpleplayer-stop-control {
+    background-image: url('../static/stop.png');
+    display: block;
+    width: 16px;
+    height: 16px;
+    bottom: -5px;
+    position: relative;
+}
+.simpleplayer-stop-control:hover {
+    background-image: url('../static/stoped.png');
+}
