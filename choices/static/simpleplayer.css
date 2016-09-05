@@ -9,7 +9,7 @@
     padding-left: 0;
 }
 .simpleplayer-play-control {
-    background-image: url('../static/play.png');
+    background-image: url('play.png');
     display: block;
     width: 16px;
     height: 16px;
@@ -17,10 +17,10 @@
     position: relative;
 }
 .simpleplayer-play-control:hover {
-    background-image: url('../static/playing.png');
+    background-image: url('playing.png');
 }
 .simpleplayer-stop-control {
-    background-image: url('../static/stop.png');
+    background-image: url('stop.png');
     display: block;
     width: 16px;
     height: 16px;
@@ -28,5 +28,5 @@
     position: relative;
 }
 .simpleplayer-stop-control:hover {
-    background-image: url('../static/stoped.png');
+    background-image: url('stoped.png');
 }
