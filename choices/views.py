@@ -1,17 +1,53 @@
-from django.http import Http404
+import hashlib
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
-import models
+from forms import LoginForm
+from models import Client
 
 
 def index(request):
-    latest_question_list = models.Question.objects.order_by('-pub_date')[:5]
-    context = {'latest_question_list': latest_question_list}
-    return render(request, 'choices.html', context)
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        client = None
+        if form.is_valid():
+            try:
+                client = Client.objects.get(username=form.data['username'])
+            except Client.DoesNotExist:
+                return render(request, 'index.html', {'form': form})
+            request.session['registered'] = client.username
+            return HttpResponseRedirect('/' + client.username)
+    else:
+        form = LoginForm()
+    return render(request, 'index.html', {'form': form})
 
 
-def detail(request, question_id):
+def detail(request, client_name):
     try:
-        question = models.Question.objects.get(pk=question_id)
-    except models.Question.DoesNotExist:
-        raise Http404("Question does not exist")
-    return render(request, 'detail.html', {'question': question})
+        client = Client.objects.get(username=client_name)
+    except Client.DoesNotExist:
+        raise Http404("That client does not exist")
+    return render(request, 'detail.html', {'client': client})
+
+
+def for_approval(request, client_name):
+    try:
+        client = Client.objects.get(username=client_name)
+    except Client.DoesNotExist:
+        raise Http404("That client does not exist")
+    return render(request, 'for_approval.html', {'client': client})
+
+
+def accepted(request, client_name):
+    try:
+        client = Client.objects.get(username=client_name)
+    except Client.DoesNotExist:
+        raise Http404("That client does not exist")
+    return render(request, 'accepted.html', {'client': client})
+
+
+def rejected(request, client_name):
+    try:
+        client = Client.objects.get(username=client_name)
+    except Client.DoesNotExist:
+        raise Http404("That client does not exist")
+    return render(request, 'rejected.html', {'client': client})
