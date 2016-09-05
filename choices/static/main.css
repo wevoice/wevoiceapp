@@ -54,7 +54,7 @@ tr
 
 .maintable
 	{
-		background-image:url(../static/wpapermic.jpg);
+		background-image:url(wpapermic.jpg);
 	}
 
 .signintable
@@ -230,7 +230,7 @@ tr
 
 .topheader
 	{
-		background-image:url(../static/50percent.png);
+		background-image:url(50percent.png);
 	}
 
 .copyright
@@ -243,7 +243,7 @@ tr
 
 .talent_admin_table_header
 	{
-		background-image:url(../static/50percentwelo.png);
+		background-image:url(50percentwelo.png);
 		text-align:center;
 		font-size:9px;
 		text-transform:uppercase;
@@ -255,7 +255,7 @@ tr
 .image_refresh
 	{
 		vertical-align: middle;
-		background:url(../static/comment_refresh1.png) no-repeat;
+		background:url(comment_refresh1.png) no-repeat;
     	width: 16px;
     	height: 16px;
     	border: none;
