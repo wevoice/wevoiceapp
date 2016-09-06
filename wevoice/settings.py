@@ -76,14 +76,14 @@ WSGI_APPLICATION = 'wevoice.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 DATABASES = {
-               'default': {
+    'default': {
                     'ENGINE': 'django.db.backends.postgresql',
                     'NAME': 'wevoicepostgres',
                     'USER': 'wevoiceadmin',
                     'PASSWORD': 'Welo!',
                     'HOST': '',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-                    'PORT': '',  # Set to empty string for default.
-       }
+                    'PORT': ''
+    }
 }
 
 
@@ -137,4 +137,3 @@ STATICFILES_DIRS = (
 # Simplified static file serving.
 # https://warehouse.python.org/project/whitenoise/
 STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
-

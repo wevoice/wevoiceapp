@@ -50,6 +50,8 @@ class Apple(models.Model):
     class Meta:
         managed = True
         db_table = 'apple'
+        verbose_name = 'Apple'
+        verbose_name_plural = 'Apple'
 
     def __unicode__(self):
         return self.name
@@ -317,6 +319,8 @@ class Main(models.Model):
     class Meta:
         managed = True
         db_table = 'main'
+        verbose_name = 'Main Talent'
+        verbose_name_plural = 'Main Talents'
 
     def __unicode__(self):
         return self.talent
