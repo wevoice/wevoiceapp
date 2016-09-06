@@ -6,7 +6,8 @@
 {% load static %}
 <link href="{% static "main.css" %}" rel="stylesheet" type="text/css">
 <link rel="stylesheet" href="{% static "simpleplayer.css" %}" type="text/css">
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
+{#<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>#}
+<script type="text/javascript" src="{% static "jquery/jquery-1.4.min.js" %}"></script>
 <script type="text/javascript" src="{% static "jquery/jquery.simpleplayer.min.js" %}"></script>
 <script type="text/javascript">
     $(document).ready(function() {
