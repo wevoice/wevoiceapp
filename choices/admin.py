@@ -2,20 +2,22 @@ from django.contrib import admin
 import models
 
 
+class TalentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'welo_id', 'vendor_fk', 'pre_approved', 'language')
+    exclude = ('vendor_id', 'gender', 'age_range', 'language', 'sample_url', 'comment', 'allclients', 'rate')
+    list_display_links = ('id', 'welo_id')
+    search_fields = ('welo_id', 'vendor_id', 'vendor_name', 'language', 'client__name', 'client__username')
+    list_per_page = 25
+admin.site.register(models.Talent, TalentAdmin)
+
+
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'username', 'password')
+    exclude = ('talents', 'password')
+    list_display = ('id', 'name', 'username')
     list_display_links = ('id', 'name')
     search_fields = ('name', 'username')
     list_per_page = 25
 admin.site.register(models.Client, ClientAdmin)
-
-
-class AppleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'talent', 'client', 'gender', 'age_range', 'language', 'sample_url', 'accepted', 'comment')
-    list_display_links = ('id', 'talent')
-    search_fields = ('talent', 'language', 'accepted')
-    list_per_page = 25
-admin.site.register(models.Apple, AppleAdmin)
 
 
 class MainAdmin(admin.ModelAdmin):
@@ -34,15 +36,6 @@ class VendorAdmin(admin.ModelAdmin):
 admin.site.register(models.Vendor, VendorAdmin)
 
 
-class TalentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'welo_id', 'vendor_id', 'vendor_name', 'gender', 'age_range', 'language', 'sample_url',
-                    'pre_approved', 'comment', 'allclients', 'rate', 'apple')
-    list_display_links = ('id', 'welo_id')
-    search_fields = ('welo_id', 'vendor_id', 'vendor_name', 'language')
-    list_per_page = 25
-admin.site.register(models.Talent, TalentAdmin)
-
-
 class LanguageAdmin(admin.ModelAdmin):
     list_display = ('id', 'language')
     list_display_links = ('id', 'language')
@@ -50,6 +43,10 @@ class LanguageAdmin(admin.ModelAdmin):
     list_per_page = 25
 admin.site.register(models.Language, LanguageAdmin)
 
+
+class SelectionAdmin(admin.ModelAdmin):
+    list_display = ('talent', 'client', 'status')
+admin.site.register(models.Selection, SelectionAdmin)
 
 admin.site.site_title = 'WeVoice Admin'
 admin.site.site_header = 'WeVoice Admin'

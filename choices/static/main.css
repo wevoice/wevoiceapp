@@ -283,3 +283,7 @@ tr
     vertical-align: middle;
 	border: none;
 }
+
+span.active {
+    color: #FFFFFF;
+}

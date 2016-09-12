@@ -1,532 +1,182 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Welocalize // wevoice</title>
+{% extends 'index.html' %}
 {% load static %}
-<link href="{% static "main.css" %}" rel="stylesheet" type="text/css">
-<link rel="stylesheet" href="{% static "simpleplayer.css" %}" type="text/css">
-{#<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>#}
-<script type="text/javascript" src="{% static "jquery/jquery-1.4.min.js" %}"></script>
-<script type="text/javascript" src="{% static "jquery/jquery.simpleplayer.min.js" %}"></script>
-<script type="text/javascript">
-    $(document).ready(function() {
-        var settings = {
-            progressbarWidth: '50px',
-            progressbarHeight: '5px',
-            progressbarColor: '#22ccff',
-            progressbarBGColor: '#eeeeee',
-            defaultVolume: 0.8
-        };
-        $(".player").player(settings);
-    });
-</script>
-</head>
-
-<body>
-<table width="1000" border="0" cellpadding="0" cellspacing="0" class="maintable">
-  <tr>
-    <td>
-        <!-- NAVIGATION -->
-    	<table width="100%" border="0" cellpadding="0" cellspacing="0" class="topheader">
-       		<tr>
-          		<td style="text-align:left"><img src="{% static "logo_h45.png" %}" width="184" height="45" alt=""/></td>
-          		<td style="text-align:center" width="17%">FOR APPROVAL</td>
-          		<td style="text-align:center" width="17%"><a href="/apple/accepted" class="aclient">ACCEPTED</a></td>
-          		<td style="text-align:center" width="17%"><a href="/apple/rejected" class="aclient">REJECTED</a></td>
-          		<td style="text-align:center" width="17%"><a href="/" class="aclient">LOG OUT</a></td>
-        	</tr>
-      	</table>
-        
+{% block main %}
+    {% if pro_selections %}
         <br>
-
         <!-- PROFESSIONAL VT LOOP -->
-        <table border='0' cellpadding='0' cellspacing='0' class=
-        'signintable' width='1000'>
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
             <tr>
-                <td style='text-align:left'><img alt='' height='30'
-                src='{% static "provt.jpg" %}' width='280'>
-                </td>
+                <td style='text-align:left'><img alt='' height='30' src='{% static "provt.jpg" %}' width='280'></td>
             </tr>
         </table>
 
-            <!-- GROUP BY LANGUAGE (INDONESIAN) -->
-            <table border='0' cellpadding='0' cellspacing='0' class=
-            'signintable' width='1000'>
-                <tr>
-                    <td>
+        {% regroup pro_selections by talent.language as selections_by_language %}
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td>
+                    {% for language in selections_by_language %}
                         <br>
-
-
-                        <div style=
-                        'text-align:left; font-size:12px; font-weight:bold'>
-                        INDONESIAN
+                        <div style='text-align:left; font-size:12px; font-weight:bold'>{{ language.grouper|upper }}
                         </div>
-
-
-                        <div style=
-                        'font-size:xx-small; line-height:2px; height:2px'>
-                        <img alt='' height='2px' src='{% static "space.png" %}'
-                        width='2px'>
+                        <div style='font-size:xx-small; line-height:2px; height:2px'>
+                            <img alt='' height='2px' src='{% static "space.png" %}' width='2px'>
                         </div>
-
-
-                        <form action='/apple/for_approval' method=
-                        'post'>
-                        </form>
-                        <input name='language' type='hidden' value=
-                        'Indonesian'><input name='age_range' type='hidden'
-                        value='26-45'><input name='gender' type='hidden'
-                        value='F'><input name='welo_id' type='hidden'
-                        value='WMEFINDONESIAN FEMALE 9'><input name=
-                        'sample_url' type='hidden' value=
-                        'media/WMEFINDONESIAN FEMALE 9.mp3'>
-
-                        <table cellpadding='0' cellspacing='0' class=
-                        'talent_admin_table' width='100%'>
+                        <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
                             <tr>
-                                <td class='talent_admin_table_header'
-                                width='15%'>ID</td>
-
-                                <td class='talent_admin_table_header'
-                                width='5%'>GENDER</td>
-
-                                <td class='talent_admin_table_header'
-                                width='10%'>AGE RANGE</td>
-
-                                <td class='talent_admin_table_header'>
-                                COMMENT</td>
-
-                                <td class='talent_admin_table_header'
-                                width='12%'>LISTEN</td>
-
-                                <td class='talent_admin_table_header'
-                                width='18%'>STATUS</td>
+                                <td class='talent_admin_table_header' width='35%'>ID</td>
+                                <td class='talent_admin_table_header' width='5%'>GENDER</td>
+                                <td class='talent_admin_table_header' width='10%'>AGE RANGE</td>
+                                <td class='talent_admin_table_header'>COMMENTS</td>
+                                <td class='talent_admin_table_header' width='17%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
                             </tr>
-
-
+                            {% for selection in language.list %}
                             <tr>
+                                <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.comment }}</td>
                                 <td class='talent_admin_table'>
-                                WMEFINDONESIAN FEMAL</td>
-
-                                <td class='talent_admin_table'>F</td>
-
-                                <td class='talent_admin_table'>26-45</td>
-
-                                <td class='talent_admin_table'>
-                                <input autocomplete='off' class='comment01'
-                                name='comment' title='comment' type='text' value=
-                                ''>&nbsp;<input class='image_refresh' name=
-                                'submit_comment' type='submit' value=
-                                ''></td>
-
-                                <td class='talent_admin_table'>
-                                    <audio class='player' preload='none'
-                                    src=
-                                    '{% static "media/WMEFINDONESIAN FEMALE 209.mp3" %}'></audio><a href='{% static "media/WMEFINDONESIAN FEMALE 209.mp3" %}'
-                                    target='_blank'><img alt='' class=
-                                    'download_button' height='16' src=
-                                    '{% static "downld.png" %}' width='16'></a>
+                                    <audio class='player' preload='none' src='{% static "media/{{ selection.talent.welo_id }}.mp3" %}'></audio>
+                                    <a href='{% static "media/{{ selection.talent.welo_id }}.mp3" %}' target='_blank'>
+                                        <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
+                                    </a>
                                 </td>
 
                                 <td class='talent_admin_table'>
-                                <input class='submitboxes03' name=
-                                'submit_accept_talent' type='submit' value=
-                                'ACCEPT'>&nbsp;<input class='submitboxes03'
-                                name='submit_reject_talent' type='submit'
-                                value='REJECT'></td>
+                                    <form action='/{{ selection.client.username }}/for_approval/' method='post'>{% csrf_token %}
+                                        <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
+                                        <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
+                                        <input class='submitboxes03' name='submit' type='submit' value='ACCEPT'>
+                                        <input class='submitboxes03' name='submit' type='submit' value='REJECT'>
+                                    </form>
+                                </td>
                             </tr>
+                            {% endfor %}
                         </table>
-                    </td>
-                </tr>
-            </table>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+    {% endif %}
 
-            <!-- GROUP BY LANGUAGE (JAPANESE) -->
-            <table border='0' cellpadding='0' cellspacing='0' class=
-            'signintable' width='1000'>
-                <tr>
-                    <td>
-                        <br>
-
-
-                        <div style=
-                        'text-align:left; font-size:12px; font-weight:bold'>
-                        JAPANESE
-                        </div>
-
-
-                        <div style=
-                        'font-size:xx-small; line-height:2px; height:2px'>
-                        <img alt='' height='2px' src='{% static "space.png" %}'
-                        width='2px'>
-                        </div>
-
-
-                        <form action='/apple/for_approval' method=
-                        'post'>
-                        </form>
-                        <input name='language' type='hidden' value=
-                        'Japanese'><input name='age_range' type='hidden'
-                        value='26-45'><input name='gender' type='hidden'
-                        value='M'><input name='welo_id' type='hidden'
-                        value='WFUMKF_FUJIYAMA'><input name='sample_url'
-                        type='hidden' value='media/WFUMKF_FUJIYAMA.mp3'>
-
-                        <form action='/apple/for_approval' method=
-                        'post'>
-                        </form>
-                        <input name='language' type='hidden' value=
-                        'Japanese'><input name='age_range' type='hidden'
-                        value='26-45'><input name='gender' type='hidden'
-                        value='F'><input name='welo_id' type='hidden'
-                        value='WMEFAPPL_JAPANESE FEMALE 10'><input name=
-                        'sample_url' type='hidden' value=
-                        'media/WMEFAPPL_JAPANESE FEMALE 10.mp3'>
-
-                        <table cellpadding='0' cellspacing='0' class=
-                        'talent_admin_table' width='100%'>
-                            <tr>
-                                <td class='talent_admin_table_header'
-                                width='15%'>ID</td>
-
-                                <td class='talent_admin_table_header'
-                                width='5%'>GENDER</td>
-
-                                <td class='talent_admin_table_header'
-                                width='10%'>AGE RANGE</td>
-
-                                <td class='talent_admin_table_header'>
-                                COMMENT</td>
-
-                                <td class='talent_admin_table_header'
-                                width='12%'>LISTEN</td>
-
-                                <td class='talent_admin_table_header'
-                                width='18%'>STATUS</td>
-                            </tr>
-
-
-                            <tr>
-                                <td class='talent_admin_table'>
-                                WFUMKF_FUJIYAMA</td>
-
-                                <td class='talent_admin_table'>M</td>
-
-                                <td class='talent_admin_table'>26-45</td>
-
-                                <td class='talent_admin_table'>
-                                <input autocomplete='off' class='comment01'
-                                name='comment' title='comment' type='text' value=
-                                'FJY: Priority#4/5. Little too show. Product name pronunciation should be checked'>&nbsp;<input class='image_refresh'
-                                name='submit_comment' type='submit' value=
-                                ''></td>
-
-                                <td class='talent_admin_table'>
-                                    <audio class='player' preload='none'
-                                    src=
-                                    '{% static "media/WFUMKF_FUJIYAMA.mp3" %}'></audio><a href='{% static "media/WFUMKF_FUJIYAMA.mp3" %}'
-                                    target='_blank'><img alt='' class=
-                                    'download_button' height='16' src=
-                                    '{% static "downld.png" %}' width='16'></a>
-                                </td>
-
-                                <td class='talent_admin_table'>
-                                <input class='submitboxes03' name=
-                                'submit_accept_talent' type='submit' value=
-                                'ACCEPT'>&nbsp;<input class='submitboxes03'
-                                name='submit_reject_talent' type='submit'
-                                value='REJECT'></td>
-                            </tr>
-
-
-                            <tr>
-                                <td class='talent_admin_table'>
-                                WMEFAPPL_JAPANESE FE</td>
-
-                                <td class='talent_admin_table'>F</td>
-
-                                <td class='talent_admin_table'>26-45</td>
-
-                                <td class='talent_admin_table'>
-                                <input autocomplete='off' class='comment01'
-                                name='comment' title='comment' type='text' value=
-                                ''>&nbsp;<input class='image_refresh' name=
-                                'submit_comment' type='submit' value=
-                                ''></td>
-
-                                <td class='talent_admin_table'>
-                                    <audio class='player' preload='none'
-                                    src=
-                                    '{% static "media/WMEFAPPL_JAPANESE FEMALE 2010.mp3" %}'>
-                                    </audio><a href=
-                                    '{% static "media/WMEFAPPL_JAPANESE FEMALE 2010.mp3" %}'
-                                    target='_blank'><img alt='' class=
-                                    'download_button' height='16' src=
-                                    '{% static "downld.png" %}' width='16'></a>
-                                </td>
-
-                                <td class='talent_admin_table'>
-                                <input class='submitboxes03' name=
-                                'submit_accept_talent' type='submit' value=
-                                'ACCEPT'>&nbsp;<input class='submitboxes03'
-                                name='submit_reject_talent' type='submit'
-                                value='REJECT'></td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
+    {% if home_selections %}
         <br>
-
-        <!-- HOME RECORDINGS LOOP -->
-        <table border='0' cellpadding='0' cellspacing='0' class=
-        'signintable' width='1000'>
+        <!-- PROFESSIONAL VT LOOP -->
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
             <tr>
-                <td style='text-align:left'><img alt='' height='30'
-                src='{% static "hr.jpg" %}' width='280'>
-                </td>
+                <td style='text-align:left'><img alt='' height='30' src='{% static "hr.jpg" %}' width='280'></td>
             </tr>
         </table>
 
-            <!-- GROUP BY LANGUAGE (RUSSIAN) -->
-            <table border='0' cellpadding='0' cellspacing='0' class=
-            'signintable' width='1000'>
-                <tr>
-                    <td>
+        {% regroup home_selections by talent.language as selections_by_language %}
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td>
+                    {% for language in selections_by_language %}
                         <br>
-
-
-                        <div style=
-                        'text-align:left; font-size:12px; font-weight:bold'>
-                        RUSSIAN
+                        <div style='text-align:left; font-size:12px; font-weight:bold'>{{ language.grouper|upper }}
                         </div>
-
-
-                        <div style=
-                        'font-size:xx-small; line-height:2px; height:2px'>
-                        <img alt='' height='2px' src='{% static "space.png" %}'
-                        width='2px'>
+                        <div style='font-size:xx-small; line-height:2px; height:2px'>
+                            <img alt='' height='2px' src='{% static "space.png" %}' width='2px'>
                         </div>
-
-
-                        <form action='/apple/for_approval' method=
-                        'post'>
-                        </form>
-                        <input name='language' type='hidden' value=
-                        'Russian'><input name='age_range' type='hidden'
-                        value='26-45'><input name='gender' type='hidden'
-                        value='M'><input name='welo_id' type='hidden'
-                        value='WATMVLAD_WMWARE'><input name='sample_url'
-                        type='hidden' value='media/WATMVLAD_WMWARE.mp3'>
-
-                        <table cellpadding='0' cellspacing='0' class=
-                        'talent_admin_table' width='100%'>
+                        <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
                             <tr>
-                                <td class='talent_admin_table_header'
-                                width='15%'>ID</td>
-
-                                <td class='talent_admin_table_header'
-                                width='5%'>GENDER</td>
-
-                                <td class='talent_admin_table_header'
-                                width='10%'>AGE RANGE</td>
-
-                                <td class='talent_admin_table_header'>
-                                COMMENT</td>
-
-                                <td class='talent_admin_table_header'
-                                width='12%'>LISTEN</td>
-
-                                <td class='talent_admin_table_header'
-                                width='18%'>STATUS</td>
+                                <td class='talent_admin_table_header' width='35%'>ID</td>
+                                <td class='talent_admin_table_header' width='5%'>GENDER</td>
+                                <td class='talent_admin_table_header' width='10%'>AGE RANGE</td>
+                                <td class='talent_admin_table_header'>COMMENTS</td>
+                                <td class='talent_admin_table_header' width='17%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
                             </tr>
-
-
+                            {% for selection in language.list %}
                             <tr>
+                                <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.comment }}</td>
                                 <td class='talent_admin_table'>
-                                WATMVLAD_WMWARE</td>
-
-                                <td class='talent_admin_table'>M</td>
-
-                                <td class='talent_admin_table'>26-45</td>
-
-                                <td class='talent_admin_table'>
-                                <input autocomplete='off' class='comment01'
-                                name='comment' title='comment' type='text' value=
-                                'Vladislav Kupryashin'>&nbsp;<input class=
-                                'image_refresh' name='submit_comment' type=
-                                'submit' value=''></td>
-
-                                <td class='talent_admin_table'>
-                                    <audio class='player' preload='none'
-                                    src=
-                                    '{% static "media/WATMVLAD_WMWARE.mp3" %}'></audio><a href='{% static "media/WATMVLAD_WMWARE.mp3" %}'
-                                    target='_blank'><img alt='' class=
-                                    'download_button' height='16' src=
-                                    '{% static "downld.png" %}' width='16'></a>
+                                    <audio class='player' preload='none' src='{% static "media/{{ selection.talent.welo_id }}.mp3" %}'></audio>
+                                    <a href='{% static "media/{{ selection.talent.welo_id }}.mp3" %}' target='_blank'>
+                                        <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
+                                    </a>
                                 </td>
 
                                 <td class='talent_admin_table'>
-                                <input class='submitboxes03' name=
-                                'submit_accept_talent' type='submit' value=
-                                'ACCEPT'>&nbsp;<input class='submitboxes03'
-                                name='submit_reject_talent' type='submit'
-                                value='REJECT'></td>
+                                    <form action='/{{ selection.client.username }}/for_approval/' method='post'>{% csrf_token %}
+                                        <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
+                                        <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
+                                        <input class='submitboxes03' name='submit' type='submit' value='ACCEPT'>
+                                        <input class='submitboxes03' name='submit' type='submit' value='REJECT'>
+                                    </form>
+                                </td>
                             </tr>
+                            {% endfor %}
                         </table>
-                    </td>
-                </tr>
-            </table>
-
-            <!-- GROUP BY LANGUAGE (VIETNAMESE) -->
-            <table border='0' cellpadding='0' cellspacing='0' class=
-            'signintable' width='1000'>
-                <tr>
-                    <td>
-                        <br>
-
-
-                        <div style=
-                        'text-align:left; font-size:12px; font-weight:bold'>
-                        VIETNAMESE
-                        </div>
-
-
-                        <div style=
-                        'font-size:xx-small; line-height:2px; height:2px'>
-                        <img alt='' height='2px' src='{% static "space.png" %}'
-                        width='2px'>
-                        </div>
-
-
-                        <form action='/apple/for_approval' method=
-                        'post'>
-                        </form>
-                        <input name='language' type='hidden' value=
-                        'Vietnamese'><input name='age_range' type='hidden'
-                        value='26-45'><input name='gender' type='hidden'
-                        value='M'><input name='welo_id' type='hidden'
-                        value='WHOMVI-VN_M_6815_1_2002_STUS'><input name=
-                        'sample_url' type='hidden' value=
-                        'media/WHOMVI-VN_M_6815_1_2002_STUS.mp3'>
-
-                        <form action='/apple/for_approval' method=
-                        'post'>
-                        </form>
-                        <input name='language' type='hidden' value=
-                        'Vietnamese'><input name='age_range' type='hidden'
-                        value='26-45'><input name='gender' type='hidden'
-                        value='F'><input name='welo_id' type='hidden'
-                        value='WHOFVI-VN_F_6808_1_2OO2_STUS'><input name=
-                        'sample_url' type='hidden' value=
-                        'media/WHOFVI-VN_F_6808_1_2OO2_STUS.mp3'>
-
-                        <table cellpadding='0' cellspacing='0' class=
-                        'talent_admin_table' width='100%'>
-                            <tr>
-                                <td class='talent_admin_table_header'
-                                width='15%'>ID</td>
-
-                                <td class='talent_admin_table_header'
-                                width='5%'>GENDER</td>
-
-                                <td class='talent_admin_table_header'
-                                width='10%'>AGE RANGE</td>
-
-                                <td class='talent_admin_table_header'>
-                                COMMENT</td>
-
-                                <td class='talent_admin_table_header'
-                                width='12%'>LISTEN</td>
-
-                                <td class='talent_admin_table_header'
-                                width='18%'>STATUS</td>
-                            </tr>
-
-
-                            <tr>
-                                <td class='talent_admin_table'>
-                                WHOMVI-VN_M_6815_1_2</td>
-
-                                <td class='talent_admin_table'>M</td>
-
-                                <td class='talent_admin_table'>26-45</td>
-
-                                <td class='talent_admin_table'>
-                                <input autocomplete='off' class='comment01'
-                                name='comment' title='comment' type='text' value=
-                                '2002_Stus'>&nbsp;<input class=
-                                'image_refresh' name='submit_comment' type=
-                                'submit' value=''></td>
-
-                                <td class='talent_admin_table'>
-                                    <audio class='player' preload='none'
-                                    src=
-                                    '{% static "media/WHOMVI-VN_M_6815_1_2002_STUS.mp3" %}'>
-                                    </audio><a href=
-                                    '{% static "media/WHOMVI-VN_M_6815_1_2002_STUS.mp3" %}'
-                                    target='_blank'><img alt='' class=
-                                    'download_button' height='16' src=
-                                    '{% static "downld.png" %}' width='16'></a>
-                                </td>
-
-                                <td class='talent_admin_table'>
-                                <input class='submitboxes03' name=
-                                'submit_accept_talent' type='submit' value=
-                                'ACCEPT'>&nbsp;<input class='submitboxes03'
-                                name='submit_reject_talent' type='submit'
-                                value='REJECT'></td>
-                            </tr>
-
-
-                            <tr>
-                                <td class='talent_admin_table'>
-                                WHOFVI-VN_F_6808_1_2</td>
-
-                                <td class='talent_admin_table'>F</td>
-
-                                <td class='talent_admin_table'>26-45</td>
-
-                                <td class='talent_admin_table'>
-                                <input autocomplete='off' class='comment01'
-                                name='comment' title='comment' type='text' value=
-                                '2002_Stus'>&nbsp;<input class=
-                                'image_refresh' name='submit_comment' type=
-                                'submit' value=''></td>
-
-                                <td class='talent_admin_table'>
-                                    <audio class='player' preload='none'
-                                    src=
-                                    '{% static "media/WHOFVI-VN_F_6808_1_2OO2_STUS.mp3" %}'>
-                                    </audio><a href=
-                                    '{% static "media/WHOFVI-VN_F_6808_1_2OO2_STUS.mp3" %}'
-                                    target='_blank'><img alt='' class=
-                                    'download_button' height='16' src=
-                                    '{% static "downld.png" %}' width='16'></a>
-                                </td>
-
-                                <td class='talent_admin_table'>
-                                <input class='submitboxes03' name=
-                                'submit_accept_talent' type='submit' value=
-                                'ACCEPT'>&nbsp;<input class='submitboxes03'
-                                name='submit_reject_talent' type='submit'
-                                value='REJECT'></td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-
-
-
-        <!-- FOOTER -->
-        <table width="1000" border="0" cellpadding="0" cellspacing="0" class="maintable">
-          <tr>
-            <td style="text-align:right; background-color: #FFFFFF" class="copyright">&copy; 2014 Welocalize | <a href="mailto:wevoice@welocalize.com">Contact Us</a>&nbsp;&nbsp;</td>
-          </tr>
+                    {% endfor %}
+                </td>
+            </tr>
         </table>
-    </td>
-  </tr>
-</table>
-</body>
-</html>
+    {% endif %}
+
+    {% if tts_selections %}
+        <br>
+        <!-- PROFESSIONAL VT LOOP -->
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td style='text-align:left'><img alt='' height='30' src='{% static "provt.jpg" %}' width='280'></td>
+            </tr>
+        </table>
+
+        {% regroup tts_selections by talent.language as selections_by_language %}
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td>
+                    {% for language in selections_by_language %}
+                        <br>
+                        <div style='text-align:left; font-size:12px; font-weight:bold'>{{ language.grouper|upper }}
+                        </div>
+                        <div style='font-size:xx-small; line-height:2px; height:2px'>
+                            <img alt='' height='2px' src='{% static "space.png" %}' width='2px'>
+                        </div>
+                        <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
+                            <tr>
+                                <td class='talent_admin_table_header' width='35%'>ID</td>
+                                <td class='talent_admin_table_header' width='5%'>GENDER</td>
+                                <td class='talent_admin_table_header' width='10%'>AGE RANGE</td>
+                                <td class='talent_admin_table_header'>COMMENTS</td>
+                                <td class='talent_admin_table_header' width='17%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
+                            </tr>
+                            {% for selection in language.list %}
+                            <tr>
+                                <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.comment }}</td>
+                                <td class='talent_admin_table'>
+                                    <audio class='player' preload='none' src='{% static "media/{{ selection.talent.welo_id }}.mp3" %}'></audio>
+                                    <a href='{% static "media/{{ selection.talent.welo_id }}.mp3" %}' target='_blank'>
+                                        <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
+                                    </a>
+                                </td>
+
+                                <td class='talent_admin_table'>
+                                    <form action='/{{ selection.client.username }}/for_approval/' method='post'>{% csrf_token %}
+                                        <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
+                                        <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
+                                        <input class='submitboxes03' name='submit' type='submit' value='ACCEPT'>
+                                        <input class='submitboxes03' name='submit' type='submit' value='REJECT'>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+    {% endif %}
+{% endblock main %}
+
+

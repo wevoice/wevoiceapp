@@ -36,3 +36,8 @@ class LoginForm(forms.Form):
             if client.password != hashlib.md5(password.encode('utf-8')).hexdigest():
                 raise forms.ValidationError(self.fields['password'].error_messages['incorrect'])
 
+
+class SelectionForm(forms.Form):
+    client_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
+    talent_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
+

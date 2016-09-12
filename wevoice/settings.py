@@ -73,16 +73,14 @@ TEMPLATES = [
 WSGI_APPLICATION = 'wevoice.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 DATABASES = {
     'default': {
-                    'ENGINE': 'django.db.backends.postgresql',
-                    'NAME': 'wevoicepostgres',
-                    'USER': 'wevoiceadmin',
-                    'PASSWORD': 'Welo!',
-                    'HOST': '',  # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-                    'PORT': ''
+                    'ENGINE': 'django.db.backends.mysql',
+                    'NAME': 'wevoicerel',
+                    'USER': 'root',
+                    'PASSWORD': 'root',
+                    'HOST': '/Applications/MAMP/tmp/mysql/mysql.sock',
+                    'PORT': '8889'
     }
 }
 

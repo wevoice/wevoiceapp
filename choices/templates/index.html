@@ -1,70 +1,65 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Welocalize // wevoice</title>
+{% extends 'base.html' %}
 {% load static %}
-<link href="{% static "main.css" %}" rel="stylesheet" type="text/css">
-</head>
-<body>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-<form action="" method="post">{% csrf_token %}
-<table width="296" class="signintable">
-  <tr>
-    <td><img src="{% static "wevoicelogo.jpg" %}" width="296" height="74" alt=""/></td>
-  </tr>
-  <tr>
-    <td><img src="{% static "signin.jpg" %}" width="216" height="51" alt=""/></td>
-  </tr>
-  <tr>
-    <td><img src="{% static "space.png" %}" width="1" height="1" alt=""/></td>
-  </tr>
-  {% if form.errors %}
-    <tr style="color: red;">
-        <td>Please correct the error{{ form.errors|pluralize }} below.</td>
-    </tr>
-  {% endif %}
-  <tr>
-    <td style="text-align:left">Username</td>
-  </tr>
-  <tr>
-    <td>{{ form.username }}</td>
-  </tr>
-  {% if form.username.errors %}
-      <tr>
-        {% for error in form.username.errors %}
-            <td class="error-message"><strong>{{ error|escape }}</strong></td>
-        {% endfor %}
-      </tr>
-  {% endif %}
-  <tr>
-    <td><img src="{% static "space.png" %}" width="1" height="1" alt=""/></td>
-  </tr>
-  <tr>
-    <td style="text-align:left">Password</td>
-  </tr>
-  <tr>
-    <td>{{ form.password }}</td>
-  </tr>
-  {% if form.password.errors %}
-      <tr>
-        {% for error in form.password.errors %}
-            <td class="error-message"><strong>{{ error|escape }}</strong></td>
-        {% endfor %}
-      </tr>
-  {% endif %}
-  <tr>
-    <td><img src="{% static "space.png" %}" width="1" height="1" alt=""/></td>
-  </tr>
-  <tr>
-    <td><input name="submit" type="submit" class="submitboxes01" value="SUBMIT" /></td>
-  </tr>
-    <tr>
-    <td><img src="{% static "space.png" %}" width="1" height="1" alt=""/></td>
-  </tr>
-</table>
-</form>
-</body>
-</html>
+{% load tags %}
+{% block extra-head %}
+    <link rel="stylesheet" href="{% static "simpleplayer.css" %}" type="text/css">
+    <script type="text/javascript" src="{% static "jquery/jquery-1.4.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "jquery/jquery.simpleplayer.min.js" %}"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var settings = {
+                progressbarWidth: '50px',
+                progressbarHeight: '5px',
+                progressbarColor: '#22ccff',
+                progressbarBGColor: '#eeeeee',
+                defaultVolume: 0.8
+            };
+            $(".player").player(settings);
+        });
+    </script>
+{% endblock extra-head %}
+{% block content %}
+    <table width="1000" border="0" cellpadding="0" cellspacing="0" class="maintable">
+        <tr>
+            <td>
+                {% block nav %}
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" class="topheader">
+                        <tr>
+                          <td style="text-align:left"><img src="{% static "logo_h45.png" %}" width="184" height="45" alt=""/></td>
+                          <td style="text-align:center" width="17%"><a href="{% url 'for_approval' client.username %}" class="aclient"><span {% active_url 'for_approval' %}>FOR APPROVAL</span></a></td>
+                          <td style="text-align:center" width="17%"><a href="{% url 'accepted' client.username %}" class="aclient"><span {% active_url 'accepted' %}>ACCEPTED</span></a></td>
+                          <td style="text-align:center" width="17%"><a href="{% url 'rejected' client.username %}" class="aclient"><span {% active_url 'rejected' %}>REJECTED</span></a></td>
+                          <td style="text-align:center" width="17%"><a href="/" class="aclient">LOG OUT</a></td>
+                        </tr>
+                    </table>
+                {% endblock nav %}
+                {% block main %}
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td>
+                                <p>&nbsp;</p>
+                                <p>&nbsp;</p>
+                                <p>&nbsp;</p>
+                                <p>&nbsp;</p>
+                                <div style="text-align:center; font-size:30px; font-weight:bold"><img src="http://localhost:8000/static/logo_h45.png" alt=""/><br/><br/>welcome to <span style="color:#DD4F05">we</span>voice</div><br/>
+                                <p>&nbsp;</p>
+                                <p>&nbsp;</p>
+                                <p>&nbsp;</p>
+                                <p>&nbsp;</p>
+                                <p>&nbsp;</p>
+                                <p>&nbsp;</p>
+                            </td>
+                        </tr>
+                    </table>
+                {% endblock main %}
+            </td>
+        </tr>
+
+        {% block footer %}
+        <tr>
+            <td style="text-align:right; background-color: #FFFFFF" class="copyright">&copy; 2014 Welocalize | <a href="mailto:wevoice@welocalize.com">Contact Us</a>&nbsp;&nbsp;</td>
+        </tr>
+        {% endblock footer %}
+
+    </table>
+{%  endblock content %}

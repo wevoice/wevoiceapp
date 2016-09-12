@@ -1,47 +1,183 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Welocalize // wevoice</title>
+{% extends 'index.html' %}
 {% load static %}
-<link href="{% static "main.css" %}" rel="stylesheet" type="text/css">
-<link rel="stylesheet" href="{% static "simpleplayer.css" %}" type="text/css">
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
-<script type="text/javascript" src="{% static "jquery/jquery.simpleplayer.min.js" %}"></script>
-<script type="text/javascript">
-    $(document).ready(function() {
-        var settings = {
-            progressbarWidth: '50px',
-            progressbarHeight: '5px',
-            progressbarColor: '#22ccff',
-            progressbarBGColor: '#eeeeee',
-            defaultVolume: 0.8
-        };
-        $(".player").player(settings);
-    });
-</script>
-</head>
-
-<body>
-<table width="1000" border="0" cellpadding="0" cellspacing="0" class="maintable">
-  <tr>
-    <td>
-    	<table width="100%" border="0" cellpadding="0" cellspacing="0" class="topheader">
-       		<tr>
-          		<td style="text-align:left"><img src="{% static "logo_h45.png" %}" width="184" height="45" alt=""/></td>
-          		<td style="text-align:center" width="17%"><a href="/apple/for_approval" class="aclient">FOR APPROVAL</a></td>
-          		<td style="text-align:center" width="17%"><a href="/apple/accepted" class="aclient">ACCEPTED</a></td>
-          		<td style="text-align:center" width="17%">REJECTED</td>
-          		<td style="text-align:center" width="17%"><a href="/" class="aclient">LOG OUT</a></td>
-        	</tr>
-      	</table>
-        <table width="1000" border="0" cellpadding="0" cellspacing="0" class="maintable">
-          <tr>
-            <td style="text-align:right; background-color: #FFFFFF" class="copyright">&copy; 2014 Welocalize | <a href="mailto:wevoice@welocalize.com">Contact Us</a>&nbsp;&nbsp;</td>
-          </tr>
+{% block main %}
+    {% if pro_selections %}
+        <br>
+        <!-- PROFESSIONAL VT LOOP -->
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td style='text-align:left'><img alt='' height='30' src='{% static "provt.jpg" %}' width='280'></td>
+            </tr>
         </table>
-    </td>
-  </tr>
-</table>
-</body>
-</html>
+
+        {% regroup pro_selections by talent.language as selections_by_language %}
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td>
+                    {% for language in selections_by_language %}
+                        <br>
+                        <div style='text-align:left; font-size:12px; font-weight:bold'>{{ language.grouper|upper }}
+                        </div>
+                        <div style='font-size:xx-small; line-height:2px; height:2px'>
+                            <img alt='' height='2px' src='{% static "space.png" %}' width='2px'>
+                        </div>
+                        <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
+                            <tr>
+                                <td class='talent_admin_table_header' width='35%'>ID</td>
+                                <td class='talent_admin_table_header' width='5%'>GENDER</td>
+                                <td class='talent_admin_table_header' width='10%'>AGE RANGE</td>
+                                <td class='talent_admin_table_header'>COMMENTS</td>
+                                <td class='talent_admin_table_header' width='17%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
+                            </tr>
+                            {% for selection in language.list %}
+                            <tr>
+                                <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.comment }}</td>
+                                <td class='talent_admin_table'>
+                                    <audio class='player' preload='none' src='{% static "media/{{ selection.talent.welo_id }}.mp3" %}'></audio>
+                                    <a href='{% static "media/{{ selection.talent.welo_id }}.mp3" %}' target='_blank'>
+                                        <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
+                                    </a>
+                                </td>
+
+                                <td class='talent_admin_table'>
+                                    <form action='/{{ selection.client.username }}/rejected/' method='post'>{% csrf_token %}
+                                        <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
+                                        <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
+                                        <input class='submitboxes03' name='submit' type='submit' value='ACCEPT'>
+                                        <input class='submitboxes03active' name='submit' type='submit' value='REJECT'>
+                                        <input class='submitboxes04' name='submit' type='submit' value='FOR APPROVAL'>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+    {% endif %}
+
+    {% if home_selections %}
+        <br>
+        <!-- PROFESSIONAL VT LOOP -->
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td style='text-align:left'><img alt='' height='30' src='{% static "provt.jpg" %}' width='280'></td>
+            </tr>
+        </table>
+
+        {% regroup home_selections by talent.language as selections_by_language %}
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td>
+                    {% for language in selections_by_language %}
+                        <br>
+                        <div style='text-align:left; font-size:12px; font-weight:bold'>{{ language.grouper|upper }}
+                        </div>
+                        <div style='font-size:xx-small; line-height:2px; height:2px'>
+                            <img alt='' height='2px' src='{% static "space.png" %}' width='2px'>
+                        </div>
+                        <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
+                            <tr>
+                                <td class='talent_admin_table_header' width='35%'>ID</td>
+                                <td class='talent_admin_table_header' width='5%'>GENDER</td>
+                                <td class='talent_admin_table_header' width='10%'>AGE RANGE</td>
+                                <td class='talent_admin_table_header'>COMMENTS</td>
+                                <td class='talent_admin_table_header' width='17%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
+                            </tr>
+                            {% for selection in language.list %}
+                            <tr>
+                                <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.comment }}</td>
+                                <td class='talent_admin_table'>
+                                    <audio class='player' preload='none' src='{% static "media/{{ selection.talent.welo_id }}.mp3" %}'></audio>
+                                    <a href='{% static "media/{{ selection.talent.welo_id }}.mp3" %}' target='_blank'>
+                                        <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
+                                    </a>
+                                </td>
+
+                                <td class='talent_admin_table'>
+                                    <form action='/{{ selection.client.username }}/rejected/' method='post'>{% csrf_token %}
+                                        <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
+                                        <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
+                                        <input class='submitboxes03' name='submit' type='submit' value='ACCEPT'>
+                                        <input class='submitboxes03active' name='submit' type='submit' value='REJECT'>
+                                        <input class='submitboxes04' name='submit' type='submit' value='FOR APPROVAL'>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+    {% endif %}
+
+    {% if tts_selections %}
+        <br>
+        <!-- PROFESSIONAL VT LOOP -->
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td style='text-align:left'><img alt='' height='30' src='{% static "provt.jpg" %}' width='280'></td>
+            </tr>
+        </table>
+
+        {% regroup tts_selections by talent.language as selections_by_language %}
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+            <tr>
+                <td>
+                    {% for language in selections_by_language %}
+                        <br>
+                        <div style='text-align:left; font-size:12px; font-weight:bold'>{{ language.grouper|upper }}
+                        </div>
+                        <div style='font-size:xx-small; line-height:2px; height:2px'>
+                            <img alt='' height='2px' src='{% static "space.png" %}' width='2px'>
+                        </div>
+                        <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
+                            <tr>
+                                <td class='talent_admin_table_header' width='35%'>ID</td>
+                                <td class='talent_admin_table_header' width='5%'>GENDER</td>
+                                <td class='talent_admin_table_header' width='10%'>AGE RANGE</td>
+                                <td class='talent_admin_table_header'>COMMENTS</td>
+                                <td class='talent_admin_table_header' width='17%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
+                            </tr>
+                            {% for selection in language.list %}
+                            <tr>
+                                <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
+                                <td class='talent_admin_table'>{{ selection.talent.comment }}</td>
+                                <td class='talent_admin_table'>
+                                    <audio class='player' preload='none' src='{% static "media/{{ selection.talent.welo_id }}.mp3" %}'></audio>
+                                    <a href='{% static "media/{{ selection.talent.welo_id }}.mp3" %}' target='_blank'>
+                                        <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
+                                    </a>
+                                </td>
+
+                                <td class='talent_admin_table'>
+                                    <form action='/{{ selection.client.username }}/rejected/' method='post'>{% csrf_token %}
+                                        <input name='talent_id' type='hidden' value='{{ talent.talent.id }}'>
+                                        <input name='client_id' type='hidden' value='{{ talent.client.id }}'>
+                                        <input class='submitboxes03' name='submit' type='submit' value='ACCEPT'>
+                                        <input class='submitboxes03active' name='submit' type='submit' value='REJECT'>
+                                        <input class='submitboxes04' name='submit' type='submit' value='FOR APPROVAL'>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+    {% endif %}
+{% endblock main %}
