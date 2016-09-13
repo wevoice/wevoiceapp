@@ -6,8 +6,8 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from __future__ import unicode_literals
-
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Admin(models.Model):
@@ -17,6 +17,20 @@ class Admin(models.Model):
     class Meta:
         managed = True
         db_table = 'admin'
+
+
+class UserProfile(models.Model):
+    # This line is required. Links UserProfile to a User model instance.
+    user = models.OneToOneField(User)
+    client = models.ForeignKey(Client)
+
+    # The additional attributes we wish to include.
+    website = models.URLField(blank=True)
+
+    # Override the __unicode__() method to return out something meaningful!
+    def __unicode__(self):
+        return self.user.username
+
 
 
 class Anheuserbusch(models.Model):
@@ -70,13 +84,6 @@ class Client(models.Model):
     name = models.TextField()
     username = models.TextField()
     password = models.TextField()
-    talents = models.ManyToManyField("Talent")
-
-    def display_talents(self):
-        return ', '.join([talent.welo_id for talent in self.talents.all()])
-
-    display_talents.short_description = 'Talents'
-    display_talents.allow_tags = True
 
     def __unicode__(self):
         return self.name
@@ -253,7 +260,6 @@ class Talent(models.Model):
     welo_id = models.TextField()
     vendor_id = models.TextField()
     vendor_name = models.TextField()
-    vendor_fk = models.ForeignKey("Vendor", default=9)
     gender = models.TextField()
     age_range = models.TextField()
     language = models.TextField()
@@ -277,14 +283,6 @@ class Talent(models.Model):
     apple = models.TextField()
     thomsonreuters = models.TextField()
     esterline = models.TextField()
-
-    # def display_clients(self):
-    #     return ', '.join([client.name for client in self.client_set.all()])
-    #
-    # display_clients.short_description = 'Clients'
-    # display_clients.allow_tags = True
-
-    search_fields = ['welo_id', ]
 
     def __unicode__(self):
         return self.welo_id
@@ -346,8 +344,15 @@ class Selection(models.Model):
         ("APPROVED", "Approved"),
         ("REJECTED", "Rejected")
     )
-    search_fields = ['talent', 'client']
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="PREAPPROVED")
+
+    def talent_language(self):
+        return self.talent.language
+    talent_language.short_description = 'Language (fk)'
+
+    def talent_age_range(self):
+        return self.talent.age_range
+    talent_age_range.short_description = 'Age Range (fk)'
 
     class Meta:
         unique_together = ('talent', 'client',)

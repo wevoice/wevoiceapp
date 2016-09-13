@@ -1,8 +1,7 @@
-from django.db import connection
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render
 from forms import LoginForm, SelectionForm
-from models import Client, Talent, Vendor, Selection
+from models import Client, Talent, Selection
 from django.core.urlresolvers import reverse
 
 
@@ -148,43 +147,108 @@ def updatedb(request):
     #             print(talent.welo_id + ": " + vendor.name)
 
     # Populate client and vendor fk (dropdown single select) and status fields on selection table
+    # for client in Client.objects.filter(username='kornferry'):
     for client in Client.objects.all():
+        protalents_for_approval, hometalents_for_approval, ttstalents_for_approval = None, None, None
+        pro_accepted_talents, home_accepted_talents, tts_accepted_talents = None, None, None
+        pro_rejected_talents, home_rejected_talents, tts_rejected_talents = None, None, None
         try:
-            protalents_for_approval, hometalents_for_approval, ttstalents_for_approval = get_talents_for_approval(
-                client.username)
+            protalents_for_approval, hometalents_for_approval, ttstalents_for_approval = get_talents_for_approval(client.username)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = protalents_for_approval[0]
             for talent in protalents_for_approval:
-                Selection.objects.create(talent=talent, client=client, status="PREAPPROVED")
+                try:
+                    Selection.objects.create(talent=talent, client=client, status="PREAPPROVED")
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = protalents_for_approval[0]
             for talent in hometalents_for_approval:
-                Selection.objects.create(talent=talent, client=client, status="PREAPPROVED")
+                try:
+                    Selection.objects.create(talent=talent, client=client, status="PREAPPROVED")
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = protalents_for_approval[0]
             for talent in ttstalents_for_approval:
-                Selection.objects.create(talent=talent, client=client, status="PREAPPROVED")
-        except:
-            print(client)
+                try:
+                    Selection.objects.create(talent=talent, client=client, status="PREAPPROVED")
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
 
+        try:
+            pro_accepted_talents, home_accepted_talents, tts_accepted_talents = get_accepted_talents(client.username)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_accepted_talents[0]
+            for talent in pro_accepted_talents:
+                try:
+                    Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client, status="APPROVED")
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_accepted_talents[0]
+            for talent in home_accepted_talents:
+                try:
+                    Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client, status="APPROVED")
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_accepted_talents[0]
+            for talent in tts_accepted_talents:
+                try:
+                    Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client, status="APPROVED")
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
 
-        # try:
-        #     pro_accepted_talents, home_accepted_talents, tts_accepted_talents = get_accepted_talents(client.username)
-        #     for talent in pro_accepted_talents:
-        #         Selection.objects.create(talent=talent, client=client, status="APPROVED")
-        #     for talent in home_accepted_talents:
-        #         Selection.objects.create(talent=talent, client=client, status="APPROVED")
-        #     for talent in tts_accepted_talents:
-        #         Selection.objects.create(talent=talent, client=client, status="APPROVED")
-        # except:
-        #     print('Hit an error')
+        try:
+            pro_rejected_talents, home_rejected_talents, tts_rejected_talents = get_rejected_talents(client.username)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_rejected_talents[0]
+            for talent in pro_rejected_talents:
+                try:
+                    Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client, status="REJECTED")
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_rejected_talents[0]
+            for talent in home_rejected_talents:
+                try:
+                    Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client, status="REJECTED")
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_rejected_talents[0]
+            for talent in tts_rejected_talents:
+                try:
+                    Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client, status="REJECTED")
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
 
-
-        # try:
-        #     pro_rejected_talents, home_rejected_talents, tts_rejected_talents = get_rejected_talents(client.username)
-        #     for talent in pro_rejected_talents:
-        #         Selection.objects.create(talent=talent, client=client, status="REJECTED")
-        #     for talent in home_rejected_talents:
-        #         Selection.objects.create(talent=talent, client=client, status="REJECTED")
-        #     for talent in tts_rejected_talents:
-        #         Selection.objects.create(talent=talent, client=client, status="REJECTED")
-        # except:
-        #     print(client)
-
+    return HttpResponse("All done!")
 
 
 def get_client(client_name):
@@ -204,6 +268,9 @@ def get_talent(talent_welo_id):
 
 
 def get_talents_for_approval(client_name):
+
+    proresults, homeresults, ttsresults = None, None, None
+
     proquery = "SELECT * FROM talent " \
         "WHERE pre_approved='y' AND %s='y' AND hr='n' AND tts='n' " \
         "AND NOT EXISTS (SELECT * FROM %s WHERE talent.welo_id=%s.talent) " \
@@ -216,10 +283,28 @@ def get_talents_for_approval(client_name):
         "WHERE pre_approved='y' AND %s='y' AND hr='n' AND tts='y' " \
         "AND NOT EXISTS (SELECT * FROM %s WHERE talent.welo_id=%s.talent) " \
         "ORDER BY language" % (client_name, client_name, client_name)
-    return Talent.objects.raw(proquery), Talent.objects.raw(homequery), Talent.objects.raw(ttsquery)
+
+    try:
+        proresults = Talent.objects.raw(proquery)
+    except Exception as e:
+        print(e)
+
+    try:
+        homeresults = Talent.objects.raw(homequery)
+    except Exception as e:
+        print(e)
+
+    try:
+        ttsresults = Talent.objects.raw(ttsquery)
+    except Exception as e:
+        print(e)
+    return proresults, homeresults, ttsresults
 
 
 def get_accepted_talents(client_name):
+
+    proresults, homeresults, ttsresults = None, None, None
+
     proquery = "SELECT * FROM %s " \
         "WHERE accepted='y' " \
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='n') " \
@@ -232,10 +317,27 @@ def get_accepted_talents(client_name):
         "WHERE accepted='y' " \
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
         "ORDER BY language" % (client_name, client_name)
-    return Talent.objects.raw(proquery), Talent.objects.raw(homequery), Talent.objects.raw(ttsquery)
+    try:
+        proresults = Talent.objects.raw(proquery)
+    except Exception as e:
+        print(e)
+
+    try:
+        homeresults = Talent.objects.raw(homequery)
+    except Exception as e:
+        print(e)
+
+    try:
+        ttsresults = Talent.objects.raw(ttsquery)
+    except Exception as e:
+        print(e)
+    return proresults, homeresults, ttsresults
 
 
 def get_rejected_talents(client_name):
+
+    proresults, homeresults, ttsresults = None, None, None
+
     proquery = "SELECT * FROM %s " \
         "WHERE accepted='n' " \
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='n') " \
@@ -248,4 +350,18 @@ def get_rejected_talents(client_name):
         "WHERE accepted='n' " \
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
         "ORDER BY language" % (client_name, client_name)
-    return Talent.objects.raw(proquery), Talent.objects.raw(homequery), Talent.objects.raw(ttsquery)
+    try:
+        proresults = Talent.objects.raw(proquery)
+    except Exception as e:
+        print(e)
+
+    try:
+        homeresults = Talent.objects.raw(homequery)
+    except Exception as e:
+        print(e)
+
+    try:
+        ttsresults = Talent.objects.raw(ttsquery)
+    except Exception as e:
+        print(e)
+    return proresults, homeresults, ttsresults
