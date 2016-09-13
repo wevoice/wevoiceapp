@@ -3,29 +3,44 @@ from django.shortcuts import render
 from forms import LoginForm, SelectionForm
 from models import Client, Talent, Selection
 from django.core.urlresolvers import reverse
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 
 
-def login(request):
+def user_login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            try:
-                client = Client.objects.get(username=form.data['username'])
-            except Client.DoesNotExist:
-                return render(request, 'index.html', {'form': form})
-            request.session['registered'] = client.username
-            return HttpResponseRedirect(reverse('index', args=(client.username,)))
+            user = authenticate(username=form.data['username'], password=form.data['password'])
+            if user:
+                # Is the account active? It could have been disabled.
+                if user.is_active:
+                    # If the account is valid and active, we can log the user in.
+                    # We'll send the user back to the homepage.
+                    login(request, user)
+                    return HttpResponseRedirect(reverse('index', args=(user.userprofile.client.username,)))
+                else:
+                    # An inactive account was used - no logging in!
+                    return HttpResponse("Sorry, this WeVoice account has been disabled.")
+            else:
+                # Bad login details were provided. So we can't log the user in.
+                print("Invalid login details: {0}, {1}".format(form.data['username'], form.data['password']))
+                return HttpResponse("Invalid login details supplied.")
 
     else:
+        if request.user.is_authenticated():
+            logout(request)
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
 
 
+@login_required
 def index(request, client_name):
     client = get_client(client_name)
     return render(request, 'index.html', {'client': client})
 
 
+@login_required
 def for_approval(request, client_name):
     if request.method == 'POST':
         form = SelectionForm(request.POST)
@@ -59,6 +74,7 @@ def for_approval(request, client_name):
     })
 
 
+@login_required
 def accepted(request, client_name):
     if request.method == 'POST':
         form = SelectionForm(request.POST)
@@ -94,6 +110,7 @@ def accepted(request, client_name):
     })
 
 
+@login_required
 def rejected(request, client_name):
     if request.method == 'POST':
         form = SelectionForm(request.POST)
@@ -129,6 +146,7 @@ def rejected(request, client_name):
     })
 
 
+@login_required
 def updatedb(request):
     # Populate client many to many field (dropdown multi-select)  on talent table
     # for client in Client.objects.all():

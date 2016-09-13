@@ -22,14 +22,44 @@ class Admin(models.Model):
 class UserProfile(models.Model):
     # This line is required. Links UserProfile to a User model instance.
     user = models.OneToOneField(User)
-    client = models.ForeignKey(Client)
+    client = models.ForeignKey("Client")
 
-    # The additional attributes we wish to include.
-    website = models.URLField(blank=True)
+    def first_name(self):
+        return self.user.first_name
+    first_name.short_description = 'First Name'
+
+    def last_name(self):
+        return self.user.last_name
+    last_name.short_description = 'Last Name'
+
+    def email(self):
+        return self.user.email
+    email.short_description = 'Email'
+
+    def is_active(self):
+        return self.user.is_active
+    is_active.short_description = 'Active'
+
+    def is_superuser(self):
+        return self.user.is_superuser
+    is_superuser.short_description = 'Superuser'
+
+    def date_joined(self):
+        return self.user.date_joined
+    date_joined.short_description = 'Joined'
+
+    def last_login(self):
+        return self.user.last_login
+    last_login.short_description = 'Last Login'
+
+    def is_staff(self):
+        return self.user.is_staff
+    is_staff.short_description = 'Is Staff'
 
     # Override the __unicode__() method to return out something meaningful!
     def __unicode__(self):
         return self.user.username
+
 
 
 

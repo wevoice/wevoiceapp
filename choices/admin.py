@@ -5,7 +5,14 @@ from django.forms import Textarea
 from django.db import models as dbmodels
 
 
-admin.site.register(models.UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'first_name', 'last_name', 'email', 'client', 'is_active', 'is_staff', 'is_superuser',
+                    'date_joined', 'last_login')
+    list_display_links = ('user',)
+    list_filter = ('client',)
+    search_fields = ('client__name', 'client__username', 'user__name')
+    list_per_page = 25
+admin.site.register(models.UserProfile, UserProfileAdmin)
 
 
 class ClientAdmin(admin.ModelAdmin):

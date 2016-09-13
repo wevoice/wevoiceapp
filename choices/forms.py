@@ -1,6 +1,6 @@
 from django import forms
-from models import Client
-import hashlib
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 
 
 class LoginForm(forms.Form):
@@ -17,8 +17,8 @@ class LoginForm(forms.Form):
 
     def clean_username(self):
         try:
-            client = Client.objects.get(username=self.cleaned_data['username'])
-        except Client.DoesNotExist:
+            username = User.objects.get(username=self.cleaned_data['username'])
+        except User.DoesNotExist:
             raise forms.ValidationError(self.fields['username'].error_messages['invalid'])
         return self.cleaned_data['username']
 
@@ -26,14 +26,11 @@ class LoginForm(forms.Form):
         cleaned_data = super(LoginForm, self).clean()
         username = cleaned_data.get("username")
         password = cleaned_data.get("password")
-        client = None
         if username and password:
-            # Only do something if both fields are valid so far.
-            try:
-                client = Client.objects.get(username=username)
-            except Client.DoesNotExist:
-                raise forms.ValidationError(self.fields['username'].error_messages['invalid'])
-            if client.password != hashlib.md5(password.encode('utf-8')).hexdigest():
+            user = authenticate(username=username, password=password)
+            if user:
+                pass
+            else:
                 raise forms.ValidationError(self.fields['password'].error_messages['incorrect'])
 
 
