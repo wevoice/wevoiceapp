@@ -1,7 +1,7 @@
 from django.http import Http404, HttpResponseRedirect, HttpResponse
-from django.shortcuts import render
-from forms import LoginForm, SelectionForm
-from models import Client, Talent, Selection
+from django.shortcuts import render, get_object_or_404
+from forms import LoginForm, SelectionForm, CommentForm
+from models import Client, Talent, Selection, Comment
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -38,6 +38,29 @@ def user_login(request):
 def index(request, client_name):
     client = get_client(client_name)
     return render(request, 'index.html', {'client': client})
+
+
+@login_required
+def comments(request, client_name, pk):
+    client = get_client(client_name)
+    selection = Selection.objects.get(pk=pk)
+    return render(request, 'selection_comments.html', {'selection': selection, 'client': client})
+
+
+def add_comment(request, client_name, pk):
+    client = get_client(client_name)
+    selection = get_object_or_404(Selection, pk=pk)
+    if request.method == "POST":
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            author = request.user.userprofile
+            comment_text = form.cleaned_data['text']
+            comment = Comment(author=author, text=comment_text, post=selection)
+            comment.save()
+            return HttpResponseRedirect(reverse('index', args=(request.user.userprofile.client.username,)))
+    else:
+        form = CommentForm()
+    return render(request, 'add_comment.html', {'form': form, 'client': client})
 
 
 @login_required

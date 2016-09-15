@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from models import Comment
 
 
 class LoginForm(forms.Form):
@@ -37,4 +38,11 @@ class LoginForm(forms.Form):
 class SelectionForm(forms.Form):
     client_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
     talent_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
+
+
+class CommentForm(forms.ModelForm):
+
+    class Meta:
+        model = Comment
+        fields = ('text',)
 

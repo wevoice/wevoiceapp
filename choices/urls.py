@@ -8,5 +8,7 @@ urlpatterns = [
     url(r'^(?P<client_name>[\w-]+)/$', views.index, name='index'),
     url(r'^(?P<client_name>[\w-]+)/for_approval/$', views.for_approval, name='for_approval'),
     url(r'^(?P<client_name>[\w-]+)/accepted/$', views.accepted, name='accepted'),
-    url(r'^(?P<client_name>[\w-]+)/rejected/$', views.rejected, name='rejected')
+    url(r'^(?P<client_name>[\w-]+)/rejected/$', views.rejected, name='rejected'),
+    url(r'^(?P<client_name>[\w-]+)/comments/(?P<pk>[0-9]+)/detail/$', views.comments, name='comments'),
+    url(r'^(?P<client_name>[\w-]+)/comments/(?P<pk>[0-9]+)/add_comment/$', views.add_comment, name='add_comment'),
 ]

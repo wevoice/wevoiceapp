@@ -64,18 +64,46 @@ class TalentAdmin(admin.ModelAdmin):
         dbmodels.TextField: {'widget': Textarea(attrs={'rows':1, 'cols':50})},
     }
     list_filter = ('gender', 'age_range', 'vendor_name', 'language')
-    list_display = ('id', 'welo_id', 'gender', 'age_range', 'vendor_name', 'language')
+    list_display = ('id', 'audio_file_player', 'welo_id', 'gender', 'age_range', 'vendor_name', 'language')
     list_display_links = ('id', 'welo_id')
     search_fields = ('welo_id', 'vendor_id', 'vendor_name', 'language', 'client__name', 'client__username')
     list_per_page = 100
+
+    def custom_delete_selected(self, request, queryset):
+        # custom delete code
+        n = queryset.count()
+        for i in queryset:
+            if i.audio_file:
+                if os.path.exists(i.audio_file.path):
+                    os.remove(i.audio_file.path)
+            i.delete()
+        self.message_user(request, ("Successfully deleted %d audio files.") % n)
+
+    custom_delete_selected.short_description = "Delete selected items"
+
+    def get_actions(self, request):
+        actions = super(TalentAdmin, self).get_actions(request)
+        del actions['delete_selected']
+        return actions
+
 admin.site.register(models.Talent, TalentAdmin)
 
 
 class SelectionAdmin(admin.ModelAdmin):
     list_filter = ('status', 'talent__gender', 'client__name', 'talent__vendor_name', 'talent__language', )
-    list_display = ('talent', 'talent_language', 'talent_age_range', 'client', 'status')
+    list_display = ('talent', 'client', 'talent_gender', 'talent_language', 'talent_age_range', 'status')
     search_fields = ['client__username', 'client__name', 'talent__welo_id', 'talent__vendor_name']
 admin.site.register(models.Selection, SelectionAdmin)
 
+
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('post', 'author', 'text', 'created_date')
+    search_fields = ['post']
+admin.site.register(models.Comment, CommentAdmin)
+
+
 admin.site.site_title = 'WeVoice Admin'
 admin.site.site_header = 'WeVoice Admin'
+
+
+
