@@ -81,6 +81,24 @@ tr
 		text-transform:uppercase;
 	}
 
+.inputboxes03
+	{
+		border: 1px solid #8C8984;
+		border-radius: 5px;
+		height: 15px;
+		width: 550px;
+		margin: 2px;
+	}
+
+.inputboxes04
+	{
+		border: 1px solid #8C8984;
+		border-radius: 5px;
+		height: 15px;
+		width: 550px;
+		margin: 2px;
+	}
+
 .uploadbox01
 	{
 		height: 20px;
@@ -215,6 +233,29 @@ tr
 		text-align:center;
 	}
 
+.submitboxes05
+	{
+		border: 0 solid #000000;
+		height: 20px;
+		width: 80px;
+		background-color: #8C8984;
+		color: #000000;
+		font-size: 9px;
+		font-weight:bold;
+		vertical-align: middle;
+		text-align:center;
+		text-transform: uppercase;
+	}
+
+input#delete_button
+	{
+		background: url('delete_small.png');
+		background-repeat: no-repeat;
+		width:20px;
+		height:20px;
+		border: 0;
+	}
+
 .comment01
 	{
 		border: 0 solid #000000;
@@ -252,6 +293,18 @@ tr
 		vertical-align: middle;
 	}
 
+
+.comment_admin_table_header
+	{
+		background-image:url(50percentcomment.png);
+		text-align:center;
+		font-size:9px;
+		text-transform:uppercase;
+		font-weight:bold;
+		border: 1px solid #8C8984;
+		vertical-align: middle;
+	}
+
 .image_refresh
 	{
 		vertical-align: middle;
@@ -268,6 +321,21 @@ tr
 		border: 1px solid #8C8984;
 		vertical-align: middle;
 		line-height:15px;
+	}
+
+.talent_comment_table
+	{
+		font-size:9px;
+		border: 1px solid #8C8984;
+		vertical-align: middle;
+		line-height:8px;
+	}
+
+.talent_comment_submit
+	{
+		font-size:9px;
+		vertical-align: middle;
+		line-height:8px;
 	}
 
 .talent_admin_table_left

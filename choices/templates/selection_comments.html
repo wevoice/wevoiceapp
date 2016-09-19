@@ -1,20 +1,18 @@
 {% extends 'index.html' %}
 
 {% block main %}
-
-
-<table cellpadding='0' cellspacing='0' class='signintable' width='100%'>
-    <tr>
-        <td class='talent_admin_table_header' width='15%'>CREATED DATE</td>
-        <td class='talent_admin_table_header' width='15%'>AUTHOR</td>
-        <td class='talent_admin_table_header' width='70%'>COMMENT</td>
-    </tr>
-    {% for comment in selection.comments.all %}
-    <tr>
-        <td class='talent_admin_table'>{{ comment.created_date }}</td>
-        <td class='talent_admin_table'>{{ comment.author }}</td>
-        <td class='talent_admin_table'>{{ comment.text|linebreaks }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <table cellpadding='0' cellspacing='0' class='signintable' width='100%'>
+        <tr>
+            <td class='talent_admin_table_header' width='15%'>CREATED DATE</td>
+            <td class='talent_admin_table_header' width='15%'>AUTHOR</td>
+            <td class='talent_admin_table_header' width='70%'>COMMENT</td>
+        </tr>
+        {% for comment in selection.comments.all %}
+        <tr>
+            <td class='talent_admin_table'>{{ comment.created_date }}</td>
+            <td class='talent_admin_table'>{{ comment.author }}</td>
+            <td class='talent_admin_table'>{{ comment.text|linebreaks }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 {% endblock %}

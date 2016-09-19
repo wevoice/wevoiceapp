@@ -26,15 +26,15 @@ class ClientAdmin(admin.ModelAdmin):
 admin.site.register(models.Client, ClientAdmin)
 
 
-class MainAdmin(admin.ModelAdmin):
-    formfield_overrides = {
-        dbmodels.TextField: {'widget': Textarea(attrs={'rows':1, 'cols':50})},
-    }
-    list_display = ('id', 'talent', 'client', 'gender', 'age_range', 'language', 'sample_url', 'accepted', 'comment')
-    list_display_links = ('id', 'talent')
-    search_fields = ('talent', 'client', 'language')
-    list_per_page = 25
-admin.site.register(models.Main, MainAdmin)
+# class MainAdmin(admin.ModelAdmin):
+#     formfield_overrides = {
+#         dbmodels.TextField: {'widget': Textarea(attrs={'rows':1, 'cols':50})},
+#     }
+#     list_display = ('id', 'talent', 'client', 'gender', 'age_range', 'language', 'sample_url', 'accepted', 'comment')
+#     list_display_links = ('id', 'talent')
+#     search_fields = ('talent', 'client', 'language')
+#     list_per_page = 25
+# admin.site.register(models.Main, MainAdmin)
 
 
 class VendorAdmin(admin.ModelAdmin):
@@ -64,9 +64,9 @@ class TalentAdmin(admin.ModelAdmin):
         dbmodels.TextField: {'widget': Textarea(attrs={'rows':1, 'cols':50})},
     }
     list_filter = ('gender', 'age_range', 'vendor_name', 'language')
-    list_display = ('id', 'audio_file_player', 'welo_id', 'gender', 'age_range', 'vendor_name', 'language')
+    list_display = ('id', 'audio_file_player', 'welo_id', 'gender', 'sample_url', 'vendor_name', 'language')
     list_display_links = ('id', 'welo_id')
-    search_fields = ('welo_id', 'vendor_id', 'vendor_name', 'language', 'client__name', 'client__username')
+    search_fields = ('welo_id', 'vendor_id', 'vendor_name', 'language', 'sample_url')
     list_per_page = 100
 
     def custom_delete_selected(self, request, queryset):

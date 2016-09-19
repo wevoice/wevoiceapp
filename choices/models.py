@@ -11,7 +11,6 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from django.conf import settings
-from audiofield.fields import AudioField
 import os.path
 
 
@@ -295,10 +294,9 @@ class Talent(models.Model):
     age_range = models.TextField()
     language = models.TextField()
     sample_url = models.TextField()
-    # Add the audio field to your model
-    audio_file = AudioField(upload_to='samples', blank=True,
-                            ext_whitelist=(".mp3", ".wav", ".ogg"),
-                            help_text=("Allowed type - .mp3, .wav, .ogg"))
+    # audio_file = models.FileField(blank=True)
+    times_rated = models.IntegerField(default=0, blank=True, null=True)
+    total_rating = models.IntegerField(default=0, blank=True, null=True)
 
     # Add this method to your model
     def audio_file_player(self):
@@ -310,7 +308,13 @@ class Talent(models.Model):
             return player_string
 
     audio_file_player.allow_tags = True
-    audio_file_player.short_description = "Audio file player"
+    audio_file_player.short_description = "Audio player"
+
+    def average_rating(self):
+        if self.times_rated > 0:
+            return int(round(self.total_rating / self.times_rated))
+
+    average_rating.short_description = "Rating"
 
     pre_approved = models.TextField()
     comment = models.TextField(null=True, blank=True)
@@ -320,7 +324,7 @@ class Talent(models.Model):
     gt = models.TextField()
     nrm = models.TextField()
     hr = models.TextField()
-    rate = models.TextField()
+    rate = models.TextField(null=True, blank=True)
     hd = models.TextField()
     workday = models.TextField()
     tts = models.TextField()

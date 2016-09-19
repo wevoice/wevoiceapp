@@ -37,7 +37,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'audiofield',
     'choices'
 )
 
@@ -49,8 +48,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'audiofield.middleware.threadlocals.ThreadLocals'
+    'django.middleware.security.SecurityMiddleware'
 )
 
 ROOT_URLCONF = 'wevoice.urls'
@@ -65,6 +63,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.media',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -128,20 +127,8 @@ ALLOWED_HOSTS = ['*']
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
 STATIC_URL = '/static/'
-
-# Frontend widget values
-# 0-Keep original, 1-Mono, 2-Stereo
-CHANNEL_TYPE_VALUE = 0
-
-# 0-Keep original, 8000-8000Hz, 16000-16000Hz, 22050-22050Hz,
-# 44100-44100Hz, 48000-48000Hz, 96000-96000Hz
-FREQ_TYPE_VALUE = 8000
-
-# 0-Keep original, 1-Convert to MP3, 2-Convert to WAV, 3-Convert to OGG
-CONVERT_TYPE_VALUE = 0
-
-
-
+MEDIA_ROOT = os.path.join(BASE_DIR, 'choices/static/media')
+MEDIA_URL = '/static/media/'
 
 # Extra places for collectstatic to find static files.
 STATICFILES_DIRS = (

@@ -1,6 +1,6 @@
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
-from forms import LoginForm, SelectionForm, CommentForm
+from forms import LoginForm, SelectionForm, CommentForm, DeleteCommentForm
 from models import Client, Talent, Selection, Comment
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
@@ -41,30 +41,48 @@ def index(request, client_name):
 
 
 @login_required
-def comments(request, client_name, pk):
+def delete_comment(request, client_name, pk):
     client = get_client(client_name)
-    selection = Selection.objects.get(pk=pk)
-    return render(request, 'selection_comments.html', {'selection': selection, 'client': client})
+    selection = get_object_or_404(Selection, pk=pk)
+    if request.method == "POST":
+        form = DeleteCommentForm(request.POST)
+        if form.is_valid():
+            comment = Comment.objects.get(id=form.cleaned_data['comment_id'])
+            comment.delete()
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'), {
+            'selection': selection,
+            'client': client})
+    else:
+        raise Http404("That page does not exist")
 
 
+@login_required
 def add_comment(request, client_name, pk):
     client = get_client(client_name)
     selection = get_object_or_404(Selection, pk=pk)
     if request.method == "POST":
         form = CommentForm(request.POST)
         if form.is_valid():
-            author = request.user.userprofile
-            comment_text = form.cleaned_data['text']
-            comment = Comment(author=author, text=comment_text, post=selection)
-            comment.save()
-            return HttpResponseRedirect(reverse('index', args=(request.user.userprofile.client.username,)))
-    else:
-        form = CommentForm()
-    return render(request, 'add_comment.html', {'form': form, 'client': client})
+            if form.cleaned_data['text'] != '':
+                author = request.user.userprofile
+                comment_text = form.cleaned_data['text']
+                comment = Comment(author=author, text=comment_text, post=selection)
+                comment.save()
+            if form.cleaned_data['rating'] != '':
+                selection.talent.times_rated += 1
+                selection.talent.total_rating += int(form.cleaned_data['rating'])
+                selection.talent.save()
 
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'), {
+                'selection': selection,
+                'client': client})
+    else:
+        return Http404("That page does not exist")
 
 @login_required
-def for_approval(request, client_name):
+def for_approval(request, client_name, pk=None, commented_pk=None):
+    comment_form = None
+    delete_comment_form = None
     if request.method == 'POST':
         form = SelectionForm(request.POST)
         if form.is_valid():
@@ -88,17 +106,26 @@ def for_approval(request, client_name):
     home_selections = selections.filter(talent__hr="y")
     tts_selections = selections.filter(talent__tts="y")
 
+    if pk:
+        pk = int(pk)
+        comment_form = CommentForm
+        delete_comment_form = DeleteCommentForm
+
     return render(request, 'for_approval.html', {
         'client': client,
         'form': form,
+        'comment_form': comment_form,
+        'delete_comment_form': delete_comment_form,
         'pro_selections': pro_selections,
         'home_selections': home_selections,
-        'tts_selections': tts_selections
+        'tts_selections': tts_selections,
+        'pk': pk,
+        'commented_pk': pk
     })
 
 
 @login_required
-def accepted(request, client_name):
+def accepted(request, client_name, pk=None):
     if request.method == 'POST':
         form = SelectionForm(request.POST)
         if form.is_valid():

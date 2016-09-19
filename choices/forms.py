@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from models import Comment
+from django.utils.safestring import mark_safe
 
 
 class LoginForm(forms.Form):
@@ -40,9 +40,32 @@ class SelectionForm(forms.Form):
     talent_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
 
 
-class CommentForm(forms.ModelForm):
+class HorizontalRadioRenderer(forms.RadioSelect.renderer):
+    def render(self):
+        return mark_safe(u'\n'.join([u'%s\n' % w for w in self]))
 
-    class Meta:
-        model = Comment
-        fields = ('text',)
+
+class CommentForm(forms.Form):
+    CHOICES = (
+        ("1", 1),
+        ("2", 2),
+        ("3", 3),
+        ("4", 4),
+        ("5", 5)
+    )
+
+    text = forms.CharField(
+        required=False,
+        max_length=512,
+        widget=forms.TextInput(attrs={'class': "inputboxes03"})
+    )
+    rating = forms.ChoiceField(
+        required=False,
+        choices=CHOICES,
+        widget=forms.RadioSelect(renderer=HorizontalRadioRenderer))
+
+
+class DeleteCommentForm(forms.Form):
+    comment_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
+
 

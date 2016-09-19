@@ -1,9 +1,8 @@
 {% extends 'index.html' %}
 
 {% block main %}
-    <h1>New comment</h1>
     <form method="POST" class="post-form">{% csrf_token %}
-        {{ form.as_p }}
+        {{ form.comment }}{{ form.rating }}
         <button type="submit" class="save btn btn-default">Send</button>
     </form>
 {% endblock %}

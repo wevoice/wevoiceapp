@@ -45,8 +45,8 @@
                                     <a class="btn btn-default" href="{% url 'add_comment' pk=selection.pk client_name=selection.client.username %}">&nbsp;&nbsp;&#9998;</a>
                                 </td>
                                 <td class='talent_admin_table'>
-                                    <audio class='player' preload='none' src='{% static "media/{{ selection.talent.welo_id }}.mp3" %}'></audio>
-                                    <a href='{% static "media/{{ selection.talent.welo_id }}.mp3" %}' target='_blank'>
+                                    <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
+                                    <a href='{% static selection.talent.sample_url %}' target='_blank'>
                                         <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
                                     </a>
                                 </td>
