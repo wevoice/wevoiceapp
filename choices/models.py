@@ -297,6 +297,14 @@ class Thomsonreuters(models.Model):
 
 
 class Talent(models.Model):
+    TYPE_CHOICES = (
+        ("PRO", "Pro Recording"),
+        ("HR", "Home Recording"),
+        ("TTS", "Text To Speech")
+    )
+    type = models.CharField(max_length=16, choices=TYPE_CHOICES, default="PR0")
+    tts = models.TextField()
+    hr = models.TextField()
     welo_id = models.TextField()
     vendor_id = models.TextField()
     vendor_name = models.TextField()
@@ -335,11 +343,9 @@ class Talent(models.Model):
     google = models.TextField()
     gt = models.TextField()
     nrm = models.TextField()
-    hr = models.TextField()
     rate = models.TextField(null=True, blank=True)
     hd = models.TextField()
     workday = models.TextField()
-    tts = models.TextField()
     cisco = models.TextField()
     kornferry = models.TextField()
     jdeere = models.TextField()
@@ -358,7 +364,6 @@ class Talent(models.Model):
 
 
 class Vendor(models.Model):
-    vendor_id = models.TextField(default="TBD")
     name = models.TextField()
     username = models.TextField()
     password = models.TextField()
@@ -369,6 +374,7 @@ class Vendor(models.Model):
     class Meta:
         managed = True
         db_table = 'vendor'
+        ordering = ['name']
 
 
 class Vmware(models.Model):
@@ -402,14 +408,14 @@ class Workday(models.Model):
 
 
 class Selection(models.Model):
-    talent = models.ForeignKey(Talent)
-    client = models.ForeignKey(Client)
     STATUS_CHOICES = (
         ("PREAPPROVED", "Pre_Approved"),
         ("APPROVED", "Approved"),
         ("REJECTED", "Rejected")
     )
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="PREAPPROVED")
+    talent = models.ForeignKey(Talent)
+    client = models.ForeignKey(Client)
 
     def talent_language(self):
         return self.talent.language
