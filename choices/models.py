@@ -25,7 +25,8 @@ class Admin(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User)
-    client = models.ForeignKey("Client")
+    client = models.ForeignKey("Client", blank=True, null=True)
+    vendor = models.ForeignKey("Vendor", blank=True, null=True)
 
     def first_name(self):
         return self.user.first_name

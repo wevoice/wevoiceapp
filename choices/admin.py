@@ -6,7 +6,7 @@ from django.db import models as dbmodels
 
 
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'first_name', 'last_name', 'email', 'client', 'is_active', 'is_staff', 'is_superuser',
+    list_display = ('user', 'first_name', 'last_name', 'client', 'vendor', 'email', 'is_active', 'is_staff', 'is_superuser',
                     'date_joined', 'last_login')
     list_display_links = ('user',)
     list_filter = ('client',)
@@ -60,26 +60,21 @@ admin.site.register(models.Language, LanguageAdmin)
 
 
 class TalentAdmin(admin.ModelAdmin):
+    def get_queryset(self, request):
+        qs = super(TalentAdmin, self).get_queryset(request)
+        if request.user.userprofile.vendor:  # If the user has a vendor
+            # change the queryset for this modeladmin
+            qs = qs.filter(vendor_name=request.user.userprofile.vendor.name)
+        return qs
+
     formfield_overrides = {
         dbmodels.TextField: {'widget': Textarea(attrs={'rows':1, 'cols':50})},
     }
     list_filter = ('gender', 'age_range', 'vendor_name', 'language')
-    list_display = ('id', 'audio_file_player', 'welo_id', 'gender', 'vendor_name', 'language')
+    list_display = ('id', 'welo_id', 'audio_file_player', 'gender', 'vendor_name', 'language')
     list_display_links = ('id', 'welo_id')
     search_fields = ('welo_id', 'vendor_id', 'vendor_name', 'language', 'sample_url')
     list_per_page = 100
-
-    def custom_delete_selected(self, request, queryset):
-        # custom delete code
-        n = queryset.count()
-        for i in queryset:
-            if i.audio_file:
-                if os.path.exists(i.audio_file.path):
-                    os.remove(i.audio_file.path)
-            i.delete()
-        self.message_user(request, ("Successfully deleted %d audio files.") % n)
-
-    custom_delete_selected.short_description = "Delete selected items"
 
     def get_actions(self, request):
         actions = super(TalentAdmin, self).get_actions(request)

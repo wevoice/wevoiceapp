@@ -22,7 +22,13 @@ def user_login(request):
                     # If the account is valid and active, we can log the user in.
                     # We'll send the user back to the homepage.
                     login(request, user)
-                    return HttpResponseRedirect(reverse('index', args=(user.userprofile.client.username,)))
+                    if user.userprofile.client:
+                        return HttpResponseRedirect(reverse('index', args=(user.userprofile.client.username,)))
+                    elif user.userprofile.vendor:
+                        return HttpResponseRedirect('/admin')
+                    else:
+                        raise Http404("That user not found")
+
                 else:
                     # An inactive account was used - no logging in!
                     return HttpResponse("Sorry, this WeVoice account has been disabled.")
