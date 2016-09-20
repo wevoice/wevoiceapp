@@ -3,5 +3,6 @@ venv
 .DS_Store
 *.pyc
 staticfiles
+choices/static/media
 .env
 db.sqlite3

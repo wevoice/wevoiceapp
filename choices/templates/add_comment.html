@@ -1,8 +1,0 @@
-{% extends 'index.html' %}
-
-{% block main %}
-    <form method="POST" class="post-form">{% csrf_token %}
-        {{ form.comment }}{{ form.rating }}
-        <button type="submit" class="save btn btn-default">Send</button>
-    </form>
-{% endblock %}

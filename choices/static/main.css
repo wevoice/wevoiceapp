@@ -359,3 +359,7 @@ span.active {
 .comment {
     margin: 20px 0px 20px 20px;
 }
+
+.gold_star {
+   	color: #ffd700;
+}

@@ -64,7 +64,7 @@ class TalentAdmin(admin.ModelAdmin):
         dbmodels.TextField: {'widget': Textarea(attrs={'rows':1, 'cols':50})},
     }
     list_filter = ('gender', 'age_range', 'vendor_name', 'language')
-    list_display = ('id', 'audio_file_player', 'welo_id', 'gender', 'sample_url', 'vendor_name', 'language')
+    list_display = ('id', 'audio_file_player', 'welo_id', 'gender', 'vendor_name', 'language')
     list_display_links = ('id', 'welo_id')
     search_fields = ('welo_id', 'vendor_id', 'vendor_name', 'language', 'sample_url')
     list_per_page = 100
@@ -86,13 +86,25 @@ class TalentAdmin(admin.ModelAdmin):
         del actions['delete_selected']
         return actions
 
+    class Media:
+        js = ('js/admin/extra-admin.js',)
+        css = {
+             'all': ('css/admin/extra-admin.css',)
+        }
 admin.site.register(models.Talent, TalentAdmin)
 
 
 class SelectionAdmin(admin.ModelAdmin):
     list_filter = ('status', 'talent__gender', 'client__name', 'talent__vendor_name', 'talent__language', )
-    list_display = ('talent', 'client', 'talent_gender', 'talent_language', 'talent_age_range', 'status')
+    list_display = ('talent', 'audio_file_player', 'client', 'talent_gender', 'talent_language',
+                    'talent_age_range', 'status')
     search_fields = ['client__username', 'client__name', 'talent__welo_id', 'talent__vendor_name']
+
+    class Media:
+        js = ('js/admin/extra-admin.js',)
+        css = {
+             'all': ('css/admin/extra-admin.css',)
+        }
 admin.site.register(models.Selection, SelectionAdmin)
 
 

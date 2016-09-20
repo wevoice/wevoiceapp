@@ -1,10 +1,10 @@
 {% extends 'index.html' %}
 {% load static %}
+{% load tags %}
 {% block main %}
     {% if pro_selections %}
         <br>
-        <!-- PROFESSIONAL VT LOOP -->
-        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000' >
             <tr>
                 <td style='text-align:left'><img alt='' height='30' src='{% static "provt.jpg" %}' width='280'></td>
             </tr>
@@ -23,44 +23,58 @@
                         </div>
                         <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
                             <tr>
-                                <td class='talent_admin_table_header' width='35%'>ID</td>
-                                <td class='talent_admin_table_header' width='5%'>GENDER</td>
-                                <td class='talent_admin_table_header' width='10%'>AGE RANGE</td>
-                                <td class='talent_admin_table_header'>COMMENTS</td>
-                                <td class='talent_admin_table_header' width='17%'>LISTEN</td>
-                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
+                                <td class='talent_admin_table_header' width='20%'>ID</td>
+                                <td class='talent_admin_table_header' width='7%'>GENDER</td>
+                                <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
+                                <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
+                                <td class='talent_admin_table_header' width='13%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='22%'>STATUS</td>
                             </tr>
                             {% for selection in language.list %}
-                            <tr>
-                                <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
-                                <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
-                                <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
-{#                                <td class='talent_admin_table'>{{ selection.talent.comment }}</td>#}
-                                <td class='talent_admin_table'>
-                                    {% if selection.comments.count > 0 %}
-                                    <a href="{% url 'for_approval' pk=selection.pk client_name=selection.client.username %}">{{ selection.comments.count }}</a>
-                                    {% else %}
-                                        {{ selection.comments.count }}
-                                    {% endif %}
-                                    <a class="btn btn-default" href="{% url 'add_comment' pk=selection.pk client_name=selection.client.username %}">&nbsp;&nbsp;&#9998;</a>
-                                </td>
-                                <td class='talent_admin_table'>
-                                    <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
-                                    <a href='{% static selection.talent.sample_url %}' target='_blank'>
-                                        <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
-                                    </a>
-                                </td>
-
-                                <td class='talent_admin_table'>
-                                    <form action='/{{ selection.client.username }}/accepted/' method='post'>{% csrf_token %}
-                                        <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
-                                        <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
-                                        <input class='submitboxes03active' name='submit' type='submit' value='ACCEPT'>
-                                        <input class='submitboxes03' name='submit' type='submit' value='REJECT'>
-                                        <input class='submitboxes04' name='submit' type='submit' value='FOR APPROVAL'>
-                                    </form>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                    <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
+                                    <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
+                                    <td class='talent_admin_table'>
+                                        {% if pk == selection.pk %}
+                                            <a href="{% url 'accepted' client_name=selection.client.username %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9660;
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'accepted' client_name=selection.client.username pk=selection.pk  %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9654;
+                                            </a>
+                                        {% endif %}
+                                        {% if selection.talent.average_rating > 0 %}
+                                            | Rated: {{ selection.talent.times_rated }}{% if selection.talent.times_rated == 1 %} time{% else %} times{% endif %}
+                                            |{% for i in 5|times %}
+                                                {% if forloop.counter0 < selection.talent.average_rating %}
+                                                    <span class="gold_star">☆</span>
+                                                    {% else %}
+                                                    <span>☆</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </td>
+                                    <td class='talent_admin_table'>
+                                        <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
+                                        <a href='{% static selection.talent.sample_url %}' target='_blank'>
+                                            <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
+                                        </a>
+                                    </td>
+                                    <td class='talent_admin_table'>
+                                        <form action='/{{ selection.client.username }}/accepted/' method='post'>{% csrf_token %}
+                                            <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
+                                            <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
+                                            <input class='submitboxes03active' name='submit' type='submit' value='ACCEPT'>
+                                            <input class='submitboxes03' name='submit' type='submit' value='REJECT'>
+                                            <input class='submitboxes04' name='submit' type='submit' value='FOR APPROVAL'>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% if pk == selection.pk %}
+                                    {% include 'comments.html' %}
+                                {% endif %}
                             {% endfor %}
                         </table>
                     {% endfor %}
@@ -68,11 +82,10 @@
             </tr>
         </table>
     {% endif %}
-
+    
     {% if home_selections %}
         <br>
-        <!-- PROFESSIONAL VT LOOP -->
-        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000' >
             <tr>
                 <td style='text-align:left'><img alt='' height='30' src='{% static "hr.jpg" %}' width='280'></td>
             </tr>
@@ -91,44 +104,58 @@
                         </div>
                         <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
                             <tr>
-                                <td class='talent_admin_table_header' width='35%'>ID</td>
-                                <td class='talent_admin_table_header' width='5%'>GENDER</td>
-                                <td class='talent_admin_table_header' width='10%'>AGE RANGE</td>
-                                <td class='talent_admin_table_header'>COMMENTS</td>
-                                <td class='talent_admin_table_header' width='17%'>LISTEN</td>
-                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
+                                <td class='talent_admin_table_header' width='20%'>ID</td>
+                                <td class='talent_admin_table_header' width='7%'>GENDER</td>
+                                <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
+                                <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
+                                <td class='talent_admin_table_header' width='13%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='22%'>STATUS</td>
                             </tr>
                             {% for selection in language.list %}
-                            <tr>
-                                <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
-                                <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
-                                <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
-{#                                <td class='talent_admin_table'>{{ selection.talent.comment }}</td>#}
-                                <td class='talent_admin_table'>
-                                    {% if selection.comments.count > 0 %}
-                                    <a href="{% url 'comments' pk=selection.pk client_name=selection.client.username %}">{{ selection.comments.count }}</a>
-                                    {% else %}
-                                        {{ selection.comments.count }}
-                                    {% endif %}
-                                    <a class="btn btn-default" href="{% url 'add_comment' pk=selection.pk client_name=selection.client.username %}">&nbsp;&nbsp;&#9998;</a>
-                                </td>
-                                <td class='talent_admin_table'>
-                                    <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
-                                    <a href='{% static selection.talent.sample_url %}' target='_blank'>
-                                        <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
-                                    </a>
-                                </td>
-
-                                <td class='talent_admin_table'>
-                                    <form action='/{{ selection.client.username }}/accepted/' method='post'>{% csrf_token %}
-                                        <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
-                                        <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
-                                        <input class='submitboxes03active' name='submit' type='submit' value='ACCEPT'>
-                                        <input class='submitboxes03' name='submit' type='submit' value='REJECT'>
-                                        <input class='submitboxes04' name='submit' type='submit' value='FOR APPROVAL'>
-                                    </form>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                    <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
+                                    <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
+                                    <td class='talent_admin_table'>
+                                        {% if pk == selection.pk %}
+                                            <a href="{% url 'accepted' client_name=selection.client.username %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9660;
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'accepted' client_name=selection.client.username pk=selection.pk  %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9654;
+                                            </a>
+                                        {% endif %}
+                                        {% if selection.talent.average_rating > 0 %}
+                                            | Rated: {{ selection.talent.times_rated }}{% if selection.talent.times_rated == 1 %} time{% else %} times{% endif %}
+                                            |{% for i in 5|times %}
+                                                {% if forloop.counter0 < selection.talent.average_rating %}
+                                                    <span class="gold_star">☆</span>
+                                                    {% else %}
+                                                    <span>☆</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </td>
+                                    <td class='talent_admin_table'>
+                                        <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
+                                        <a href='{% static selection.talent.sample_url %}' target='_blank'>
+                                            <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
+                                        </a>
+                                    </td>
+                                    <td class='talent_admin_table'>
+                                        <form action='/{{ selection.client.username }}/accepted/' method='post'>{% csrf_token %}
+                                            <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
+                                            <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
+                                            <input class='submitboxes03active' name='submit' type='submit' value='ACCEPT'>
+                                            <input class='submitboxes03' name='submit' type='submit' value='REJECT'>
+                                            <input class='submitboxes04' name='submit' type='submit' value='FOR APPROVAL'>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% if pk == selection.pk %}
+                                    {% include 'comments.html' %}
+                                {% endif %}
                             {% endfor %}
                         </table>
                     {% endfor %}
@@ -139,10 +166,9 @@
 
     {% if tts_selections %}
         <br>
-        <!-- PROFESSIONAL VT LOOP -->
-        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000' >
             <tr>
-                <td style='text-align:left'><img alt='' height='30' src='{% static "provt.jpg" %}' width='280'></td>
+                <td style='text-align:left'><img alt='' height='30' src='{% static "tts.jpg" %}' width='280'></td>
             </tr>
         </table>
 
@@ -159,44 +185,58 @@
                         </div>
                         <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
                             <tr>
-                                <td class='talent_admin_table_header' width='35%'>ID</td>
-                                <td class='talent_admin_table_header' width='5%'>GENDER</td>
-                                <td class='talent_admin_table_header' width='10%'>AGE RANGE</td>
-                                <td class='talent_admin_table_header'>COMMENTS</td>
-                                <td class='talent_admin_table_header' width='17%'>LISTEN</td>
-                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
+                                <td class='talent_admin_table_header' width='20%'>ID</td>
+                                <td class='talent_admin_table_header' width='7%'>GENDER</td>
+                                <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
+                                <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
+                                <td class='talent_admin_table_header' width='13%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='22%'>STATUS</td>
                             </tr>
                             {% for selection in language.list %}
-                            <tr>
-                                <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
-                                <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
-                                <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
-{#                                <td class='talent_admin_table'>{{ selection.talent.comment }}</td>#}
-                                <td class='talent_admin_table'>
-                                    {% if selection.comments.count > 0 %}
-                                    <a href="{% url 'comments' pk=selection.pk client_name=selection.client.username %}">{{ selection.comments.count }}</a>
-                                    {% else %}
-                                        {{ selection.comments.count }}
-                                    {% endif %}
-                                    <a class="btn btn-default" href="{% url 'add_comment' pk=selection.pk client_name=selection.client.username %}">&nbsp;&nbsp;&#9998;</a>
-                                </td>
-                                <td class='talent_admin_table'>
-                                    <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
-                                    <a href='{% static selection.talent.sample_url %}' target='_blank'>
-                                        <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
-                                    </a>
-                                </td>
-
-                                <td class='talent_admin_table'>
-                                    <form action='/{{ selection.client.username }}/accepted/' method='post'>{% csrf_token %}
-                                        <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
-                                        <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
-                                        <input class='submitboxes03active' name='submit' type='submit' value='ACCEPT'>
-                                        <input class='submitboxes03' name='submit' type='submit' value='REJECT'>
-                                        <input class='submitboxes04' name='submit' type='submit' value='FOR APPROVAL'>
-                                    </form>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                    <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
+                                    <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
+                                    <td class='talent_admin_table'>
+                                        {% if pk == selection.pk %}
+                                            <a href="{% url 'accepted' client_name=selection.client.username %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9660;
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'accepted' client_name=selection.client.username pk=selection.pk  %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9654;
+                                            </a>
+                                        {% endif %}
+                                        {% if selection.talent.average_rating > 0 %}
+                                            | Rated: {{ selection.talent.times_rated }}{% if selection.talent.times_rated == 1 %} time{% else %} times{% endif %}
+                                            |{% for i in 5|times %}
+                                                {% if forloop.counter0 < selection.talent.average_rating %}
+                                                    <span class="gold_star">☆</span>
+                                                    {% else %}
+                                                    <span>☆</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </td>
+                                    <td class='talent_admin_table'>
+                                        <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
+                                        <a href='{% static selection.talent.sample_url %}' target='_blank'>
+                                            <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
+                                        </a>
+                                    </td>
+                                    <td class='talent_admin_table'>
+                                        <form action='/{{ selection.client.username }}/accepted/' method='post'>{% csrf_token %}
+                                            <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
+                                            <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
+                                            <input class='submitboxes03active' name='submit' type='submit' value='ACCEPT'>
+                                            <input class='submitboxes03' name='submit' type='submit' value='REJECT'>
+                                            <input class='submitboxes04' name='submit' type='submit' value='FOR APPROVAL'>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% if pk == selection.pk %}
+                                    {% include 'comments.html' %}
+                                {% endif %}
                             {% endfor %}
                         </table>
                     {% endfor %}

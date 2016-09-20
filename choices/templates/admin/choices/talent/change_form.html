@@ -3,6 +3,7 @@
 
 
 {% block extrahead %}{{ block.super }}
+{#<link href="{% static "main.css" %}" rel="stylesheet" type="text/css">#}
 <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
 {{ media }}
 {% include "audiofield.html" %}

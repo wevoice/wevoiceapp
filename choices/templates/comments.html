@@ -1,0 +1,53 @@
+<tr>
+    <td class='comment_admin_table_header' >ID</td>
+    <td class='comment_admin_table_header' >DEL</td>
+    <td colspan='2' class='comment_admin_table_header' >COMMENT</td>
+    <td class='comment_admin_table_header' >DATE</td>
+    <td class='comment_admin_table_header' >AUTHOR</td>
+</tr>
+{% for comment in selection.comments.all %}
+<tr>
+    <td class='talent_comment_table'>{{ selection.talent.welo_id }}</td>
+    <td class='talent_comment_table'>
+        {% if comment.author.id == user.userprofile.id or user.is_superuser %}
+            <form method="POST" action="{% url 'delete_comment' client_name=client.username pk=selection.pk %}" >
+                {% csrf_token %}
+                <input name='comment_id' type='hidden' value='{{ comment.id }}'>
+                <input id='delete_button' name='delete' type='submit' alt='delete' value=''>
+            </form>
+        {% endif %}
+    </td>
+    <td colspan='2' class='talent_comment_table'>{{ comment.text|linebreaks }}</td>
+    <td class='talent_comment_table'>{{ comment.created_date }}</td>
+    <td class='talent_comment_table'>{{ comment.author }}</td>
+
+</tr>
+{% endfor %}
+<tr>
+    <td colspan='6' class='talent_comment_table' >
+        <form method="POST" action="{% url 'add_comment' client_name=client.username pk=selection.pk %}" >
+            {% csrf_token %}
+            <table>
+                <tr>
+                    <td colspan='4' class='talent_comment_submit'>
+                        Add Comment: {{ comment_form.text }}
+                    </td>
+                    <td colspan='2' class='talent_comment_submit'>
+                        Update Rating: {{ comment_form.rating }}&nbsp;&nbsp;
+                        <input type="submit" class='submitboxes05' value="submit">
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </td>
+</tr>
+{% if not forloop.last %}
+<tr>
+    <td class='talent_admin_table_header' width='20%'>ID</td>
+    <td class='talent_admin_table_header' width='7%'>GENDER</td>
+    <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
+    <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
+    <td class='talent_admin_table_header' width='12%'>LISTEN</td>
+    <td class='talent_admin_table_header' width='23%'>STATUS</td>
+</tr>
+{% endif %}

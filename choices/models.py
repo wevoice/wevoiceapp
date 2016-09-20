@@ -254,6 +254,15 @@ class Nrm(models.Model):
         db_table = 'nrm'
 
 
+class Rating(models.Model):
+    rating = models.IntegerField(default=0, blank=True, null=True)
+    talent = models.ForeignKey('Talent')
+    rater = models.ForeignKey('UserProfile')
+
+    class Meta:
+        unique_together = ('talent', 'rater',)
+
+
 class Resaas(models.Model):
     talent = models.TextField()
     client = models.TextField()
@@ -294,17 +303,18 @@ class Talent(models.Model):
     age_range = models.TextField()
     language = models.TextField()
     sample_url = models.TextField()
-    # audio_file = models.FileField(blank=True)
+    audio_file = models.FileField(blank=True)
     times_rated = models.IntegerField(default=0, blank=True, null=True)
     total_rating = models.IntegerField(default=0, blank=True, null=True)
 
-    # Add this method to your model
     def audio_file_player(self):
         """audio player tag for admin"""
         if self.audio_file:
             file_url = settings.MEDIA_URL + str(self.audio_file)
-            player_string = '<ul class="playlist"><li style="width:250px;">\
-            <a href="%s">%s</a></li></ul>' % (file_url, os.path.basename(self.audio_file.name))
+            player_string = \
+                '<div class="simple-player-container" style="background-color: #ffffff;">' \
+                '<audio class="player" preload="none" src="%s"></audio>' \
+                '</div>' % file_url
             return player_string
 
     audio_file_player.allow_tags = True
@@ -312,7 +322,7 @@ class Talent(models.Model):
 
     def average_rating(self):
         if self.times_rated > 0:
-            return int(round(self.total_rating / self.times_rated))
+            return int(round(float(self.total_rating) / float(self.times_rated)))
 
     average_rating.short_description = "Rating"
 
@@ -400,15 +410,28 @@ class Selection(models.Model):
 
     def talent_language(self):
         return self.talent.language
-    talent_language.short_description = 'Language (fk)'
+    talent_language.short_description = 'Language'
 
     def talent_gender(self):
         return self.talent.gender
-    talent_gender.short_description = 'Gender (fk)'
+    talent_gender.short_description = 'Gender'
 
     def talent_age_range(self):
         return self.talent.age_range
-    talent_age_range.short_description = 'Age Range (fk)'
+    talent_age_range.short_description = 'Age Range'
+
+    def audio_file_player(self):
+        """audio player tag for admin"""
+        if self.talent.audio_file:
+            file_url = settings.MEDIA_URL + str(self.talent.audio_file)
+            player_string = \
+                '<div class="simple-player-container" style="background-color: #ffffff;">' \
+                '<audio class="player" preload="none" src="%s"></audio>' \
+                '</div>' % file_url
+            return player_string
+
+    audio_file_player.allow_tags = True
+    audio_file_player.short_description = "Audio player"
 
     class Meta:
         unique_together = ('talent', 'client',)

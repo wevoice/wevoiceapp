@@ -1,5 +1,6 @@
 {% extends 'index.html' %}
 {% load static %}
+{% load tags %}
 {% block main %}
     {% if pro_selections %}
         <br>
@@ -35,14 +36,25 @@
                                     <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
                                     <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
                                     <td class='talent_admin_table'>
-                                        {% if selection.comments.count > 0 %}
-                                            <a href="{% url 'for_approval' client_name=selection.client.username pk=selection.pk  %}">
-                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count > 1 %}Comments{% else %}Comment{% endif %}
+                                        {% if pk == selection.pk %}
+                                            <a href="{% url 'for_approval' client_name=selection.client.username %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9660;
                                             </a>
                                         {% else %}
-                                            {{ selection.comments.count }}&nbsp;Comments
+                                            <a href="{% url 'for_approval' client_name=selection.client.username pk=selection.pk  %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9654;
+                                            </a>
                                         {% endif %}
-                                        {% if selection.talent.average_rating > 0 %}| Rated: {{ selection.talent.times_rated }} times | Rating: {{ selection.talent.average_rating }} out of 5{% endif %}
+                                        {% if selection.talent.average_rating > 0 %}
+                                            | Rated: {{ selection.talent.times_rated }}{% if selection.talent.times_rated == 1 %} time{% else %} times{% endif %}
+                                            |{% for i in 5|times %}
+                                                {% if forloop.counter0 < selection.talent.average_rating %}
+                                                    <span class="gold_star">☆</span>
+                                                    {% else %}
+                                                    <span>☆</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
                                     </td>
                                     <td class='talent_admin_table'>
                                         <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
@@ -50,7 +62,6 @@
                                             <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
                                         </a>
                                     </td>
-
                                     <td class='talent_admin_table'>
                                         <form action='/{{ selection.client.username }}/for_approval/' method='post'>{% csrf_token %}
                                             <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
@@ -61,50 +72,7 @@
                                     </td>
                                 </tr>
                                 {% if pk == selection.pk %}
-                                <tr>
-                                    <td class='comment_admin_table_header' >ID</td>
-                                    <td class='comment_admin_table_header' >DEL</td>
-                                    <td colspan='2' class='comment_admin_table_header' >COMMENT</td>
-                                    <td class='comment_admin_table_header' >DATE</td>
-                                    <td class='comment_admin_table_header' >AUTHOR</td>
-                                </tr>
-                                {% for comment in selection.comments.all %}
-                                <tr>
-                                    <td class='talent_comment_table'>{{ selection.talent.welo_id }}</td>
-                                    <td class='talent_comment_table'>
-                                        <form method="POST" action="{% url 'delete_comment' client_name=client.username pk=selection.pk   %}" >
-                                            {% csrf_token %}
-                                            <input name='comment_id' type='hidden' value='{{ comment.id }}'>
-                                            <input id='delete_button' name='delete' type='submit' alt='delete' value=''>
-                                        </form>
-                                    </td>
-                                    <td colspan='2' class='talent_comment_table'>{{ comment.text|linebreaks }}</td>
-                                    <td class='talent_comment_table'>{{ comment.created_date }}</td>
-                                    <td class='talent_comment_table'>{{ comment.author }}</td>
-
-                                </tr>
-                                {% endfor %}
-                                <tr>
-                                    <form method="POST" action="{% url 'add_comment' client_name=client.username pk=selection.pk   %}" class="post-form">{% csrf_token %}
-                                        <td colspan='4' class='talent_comment_submit'>
-                                            Add Comment: {{ comment_form.text }}
-                                        </td>
-                                        <td colspan='2' class='talent_comment_submit'>
-                                            Update Rating: {{ comment_form.rating }}&nbsp;&nbsp;
-                                            <input type="submit" class='submitboxes05' value="submit">
-                                        </td>
-                                    </form>
-                                </tr>
-                                {% if not forloop.last %}
-                                <tr>
-                                    <td class='talent_admin_table_header' width='20%'>ID</td>
-                                    <td class='talent_admin_table_header' width='7%'>GENDER</td>
-                                    <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
-                                    <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
-                                    <td class='talent_admin_table_header' width='12%'>LISTEN</td>
-                                    <td class='talent_admin_table_header' width='23%'>STATUS</td>
-                                </tr>
-                                {% endif %}
+                                    {% include 'comments.html' %}
                                 {% endif %}
                             {% endfor %}
                         </table>
@@ -116,7 +84,7 @@
 
     {% if home_selections %}
         <br>
-        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000' >
             <tr>
                 <td style='text-align:left'><img alt='' height='30' src='{% static "hr.jpg" %}' width='280'></td>
             </tr>
@@ -139,8 +107,8 @@
                                 <td class='talent_admin_table_header' width='7%'>GENDER</td>
                                 <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
                                 <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
-                                <td class='talent_admin_table_header' width='12%'>LISTEN</td>
-                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
+                                <td class='talent_admin_table_header' width='13%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='22%'>STATUS</td>
                             </tr>
                             {% for selection in language.list %}
                                 <tr>
@@ -148,12 +116,25 @@
                                     <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
                                     <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
                                     <td class='talent_admin_table'>
-                                        {% if selection.comments.count > 0 %}
-                                        <a href="{% url 'for_approval' client_name=selection.client.username pk=selection.pk  %}">{{ selection.comments.count }}</a>
+                                        {% if pk == selection.pk %}
+                                            <a href="{% url 'for_approval' client_name=selection.client.username %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9660;
+                                            </a>
                                         {% else %}
-                                            {{ selection.comments.count }}
+                                            <a href="{% url 'for_approval' client_name=selection.client.username pk=selection.pk  %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9654;
+                                            </a>
                                         {% endif %}
-                                        <a class="btn btn-default" href="{% url 'add_comment' pk=selection.pk client_name=selection.client.username %}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9998;</a>
+                                        {% if selection.talent.average_rating > 0 %}
+                                            | Rated: {{ selection.talent.times_rated }}{% if selection.talent.times_rated == 1 %} time{% else %} times{% endif %}
+                                            |{% for i in 5|times %}
+                                                {% if forloop.counter0 < selection.talent.average_rating %}
+                                                    <span class="gold_star">☆</span>
+                                                    {% else %}
+                                                    <span>☆</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
                                     </td>
                                     <td class='talent_admin_table'>
                                         <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
@@ -161,7 +142,6 @@
                                             <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
                                         </a>
                                     </td>
-
                                     <td class='talent_admin_table'>
                                         <form action='/{{ selection.client.username }}/for_approval/' method='post'>{% csrf_token %}
                                             <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
@@ -172,24 +152,7 @@
                                     </td>
                                 </tr>
                                 {% if pk == selection.pk %}
-                                <tr>
-                                    <td class='comment_admin_table_header' width='20%'>ID</td>
-                                    <td class='comment_admin_table_header' width='7%'>&nbsp;</td>
-                                    <td class='comment_admin_table_header' width='7%'>&nbsp;</td>
-                                    <td class='comment_admin_table_header' width='26%'>COMMENT</td>
-                                    <td class='comment_admin_table_header' width='12%'>AUTHOR</td>
-                                    <td class='comment_admin_table_header' width='23%'>DATE</td>
-                                </tr>
-                                {% for comment in selection.comments.all %}
-                                <tr>
-                                    <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
-                                    <td class='talent_admin_table'></td>
-                                    <td class='talent_admin_table'></td>
-                                    <td class='talent_admin_table'>{{ comment.text|linebreaks }}</td>
-                                    <td class='talent_admin_table'>{{ comment.author }}</td>
-                                    <td class='talent_admin_table'>{{ comment.created_date }}</td>
-                                 </tr>
-                                {% endfor %}
+                                    {% include 'comments.html' %}
                                 {% endif %}
                             {% endfor %}
                         </table>
@@ -201,7 +164,7 @@
 
     {% if tts_selections %}
         <br>
-        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000'>
+        <table border='0' cellpadding='0' cellspacing='0' class='signintable' width='1000' >
             <tr>
                 <td style='text-align:left'><img alt='' height='30' src='{% static "tts.jpg" %}' width='280'></td>
             </tr>
@@ -224,8 +187,8 @@
                                 <td class='talent_admin_table_header' width='7%'>GENDER</td>
                                 <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
                                 <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
-                                <td class='talent_admin_table_header' width='12%'>LISTEN</td>
-                                <td class='talent_admin_table_header' width='23%'>STATUS</td>
+                                <td class='talent_admin_table_header' width='13%'>LISTEN</td>
+                                <td class='talent_admin_table_header' width='22%'>STATUS</td>
                             </tr>
                             {% for selection in language.list %}
                                 <tr>
@@ -233,12 +196,25 @@
                                     <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
                                     <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
                                     <td class='talent_admin_table'>
-                                        {% if selection.comments.count > 0 %}
-                                        <a href="{% url 'for_approval' client_name=selection.client.username pk=selection.pk  %}">{{ selection.comments.count }}</a>
+                                        {% if pk == selection.pk %}
+                                            <a href="{% url 'for_approval' client_name=selection.client.username %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9660;
+                                            </a>
                                         {% else %}
-                                            {{ selection.comments.count }}
+                                            <a href="{% url 'for_approval' client_name=selection.client.username pk=selection.pk  %}">
+                                                {{ selection.comments.count }}&nbsp;{% if selection.comments.count == 1 %}Comment{% else %}Comments{% endif %}&nbsp;&#9654;
+                                            </a>
                                         {% endif %}
-                                        <a class="btn btn-default" href="{% url 'add_comment' pk=selection.pk client_name=selection.client.username %}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9998;</a>
+                                        {% if selection.talent.average_rating > 0 %}
+                                            | Rated: {{ selection.talent.times_rated }}{% if selection.talent.times_rated == 1 %} time{% else %} times{% endif %}
+                                            |{% for i in 5|times %}
+                                                {% if forloop.counter0 < selection.talent.average_rating %}
+                                                    <span class="gold_star">☆</span>
+                                                    {% else %}
+                                                    <span>☆</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
                                     </td>
                                     <td class='talent_admin_table'>
                                         <audio class='player' preload='none' src='{% static selection.talent.sample_url %}'></audio>
@@ -246,7 +222,6 @@
                                             <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
                                         </a>
                                     </td>
-
                                     <td class='talent_admin_table'>
                                         <form action='/{{ selection.client.username }}/for_approval/' method='post'>{% csrf_token %}
                                             <input name='talent_id' type='hidden' value='{{ selection.talent.id }}'>
@@ -257,24 +232,7 @@
                                     </td>
                                 </tr>
                                 {% if pk == selection.pk %}
-                                <tr>
-                                    <td class='comment_admin_table_header' width='20%'>ID</td>
-                                    <td class='comment_admin_table_header' width='7%'>&nbsp;</td>
-                                    <td class='comment_admin_table_header' width='7%'>&nbsp;</td>
-                                    <td class='comment_admin_table_header' width='26%'>COMMENT</td>
-                                    <td class='comment_admin_table_header' width='12%'>AUTHOR</td>
-                                    <td class='comment_admin_table_header' width='23%'>DATE</td>
-                                </tr>
-                                {% for comment in selection.comments.all %}
-                                <tr>
-                                    <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
-                                    <td class='talent_admin_table'></td>
-                                    <td class='talent_admin_table'></td>
-                                    <td class='talent_admin_table'>{{ comment.text|linebreaks }}</td>
-                                    <td class='talent_admin_table'>{{ comment.author }}</td>
-                                    <td class='talent_admin_table'>{{ comment.created_date }}</td>
-                                 </tr>
-                                {% endfor %}
+                                    {% include 'comments.html' %}
                                 {% endif %}
                             {% endfor %}
                         </table>
