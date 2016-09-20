@@ -1,7 +1,7 @@
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from forms import LoginForm, SelectionForm, CommentForm, DeleteCommentForm
-from models import Client, Talent, Selection, Comment, Rating
+from models import Client, Talent, Selection, Comment, Rating, Vendor
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -354,10 +354,20 @@ def updatedb(request):
     #     except Exception as e:
     #         print(e)
 
+    # Move sound files path to audio_file field
+    # for talent in Talent.objects.all():
+    #     try:
+    #         with open(os.path.join(settings.MEDIA_ROOT, talent.sample_url.split('/')[1]), 'rb') as doc_file:
+    #             talent.audio_file.save('sample_' + talent.sample_url.split('/')[1], File(doc_file), save=True)
+    #             talent.save()
+    #     except Exception as e:
+    #         print(e)
+
     for talent in Talent.objects.all():
         try:
-            with open(os.path.join(settings.MEDIA_ROOT, talent.sample_url.split('/')[1]), 'rb') as doc_file:
-                talent.audio_file.save('sample_' + talent.sample_url.split('/')[1], File(doc_file), save=True)
+            if talent.vendor_name:
+                vendor, created = Vendor.objects.get_or_create(name=talent.vendor_name)
+                talent.vt_vendor = vendor
                 talent.save()
         except Exception as e:
             print(e)

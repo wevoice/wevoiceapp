@@ -300,6 +300,7 @@ class Talent(models.Model):
     welo_id = models.TextField()
     vendor_id = models.TextField()
     vendor_name = models.TextField()
+    vt_vendor = models.ForeignKey("Vendor", default=9)
     gender = models.TextField()
     age_range = models.TextField()
     language = models.TextField()
@@ -357,6 +358,7 @@ class Talent(models.Model):
 
 
 class Vendor(models.Model):
+    vendor_id = models.TextField(default="TBD")
     name = models.TextField()
     username = models.TextField()
     password = models.TextField()
@@ -420,6 +422,10 @@ class Selection(models.Model):
     def talent_age_range(self):
         return self.talent.age_range
     talent_age_range.short_description = 'Age Range'
+
+    def talent_vt_vendor(self):
+        return self.talent.vt_vendor
+    talent_vt_vendor.short_description = 'Vendor'
 
     def audio_file_player(self):
         """audio player tag for admin"""

@@ -70,10 +70,10 @@ class TalentAdmin(admin.ModelAdmin):
     formfield_overrides = {
         dbmodels.TextField: {'widget': Textarea(attrs={'rows':1, 'cols':50})},
     }
-    list_filter = ('gender', 'age_range', 'vendor_name', 'language')
-    list_display = ('id', 'welo_id', 'audio_file_player', 'gender', 'vendor_name', 'language')
+    list_filter = ('gender', 'age_range', 'vt_vendor', 'language')
+    list_display = ('id', 'welo_id', 'audio_file_player', 'gender', 'vt_vendor', 'language')
     list_display_links = ('id', 'welo_id')
-    search_fields = ('welo_id', 'vendor_id', 'vendor_name', 'language', 'sample_url')
+    search_fields = ('welo_id', 'vt_vendor', 'language', 'sample_url')
     list_per_page = 100
 
     def get_actions(self, request):
@@ -90,10 +90,10 @@ admin.site.register(models.Talent, TalentAdmin)
 
 
 class SelectionAdmin(admin.ModelAdmin):
-    list_filter = ('status', 'talent__gender', 'client__name', 'talent__vendor_name', 'talent__language', )
-    list_display = ('talent', 'audio_file_player', 'client', 'talent_gender', 'talent_language',
+    list_filter = ('status', 'talent__gender', 'client__name', 'talent__vt_vendor', 'talent__language', )
+    list_display = ('talent', 'audio_file_player', 'client', 'talent_vt_vendor', 'talent_gender', 'talent_language',
                     'talent_age_range', 'status')
-    search_fields = ['client__username', 'client__name', 'talent__welo_id', 'talent__vendor_name']
+    search_fields = ['client__username', 'client__name', 'talent__welo_id', 'talent__vt_vendor']
 
     class Media:
         js = ('js/admin/extra-admin.js',)
