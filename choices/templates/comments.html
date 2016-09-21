@@ -1,3 +1,4 @@
+{% if selection.comments.all %}
 <tr>
     <td class='comment_admin_table_header' >ID</td>
     <td class='comment_admin_table_header' >DEL</td>
@@ -5,6 +6,7 @@
     <td class='comment_admin_table_header' >DATE</td>
     <td class='comment_admin_table_header' >AUTHOR</td>
 </tr>
+{% endif %}
 {% for comment in selection.comments.all %}
 <tr>
     <td class='talent_comment_table'>{{ selection.talent.welo_id }}</td>
@@ -34,6 +36,20 @@
                     </td>
                     <td colspan='2' class='talent_comment_submit'>
                         Update Rating: {{ comment_form.rating }}&nbsp;&nbsp;
+{#                        {% for radio in comment_form.rating %}#}
+{#                            <label>#}
+{#                                {{ radio.choice_label }}#}
+{#                                {%  for rating in selection.talent.rating_set.all %}#}
+{#                                    {% if user.userprofile.id ==  rating.rater.id %}#}
+{#                                        {% if rating.rating|stringformat:"i" == radio.choice_label %}#}
+{#                                            <span class="radio"><input id="id_rating_{{ forloop.counter0 }}" name="rating" type="radio" selected="selected" value="{{ forloop.counter }}"></span>#}
+{#                                            {% else %}#}
+{#                                            <span class="radio">{{ radio.tag }}</span>#}
+{#                                        {% endif %}#}
+{#                                    {% endif %}#}
+{#                                {% endfor %}#}
+{#                            </label>#}
+{#                        {% endfor %}#}
                         <input type="submit" class='submitboxes05' value="submit">
                     </td>
                 </tr>

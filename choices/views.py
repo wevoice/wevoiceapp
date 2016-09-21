@@ -120,7 +120,7 @@ def for_approval(request, client_name, pk=None):
     selections = Selection.objects.filter(client=client).filter(status='PREAPPROVED')
     pro_selections = selections.filter(talent__type="PRO")
     home_selections = selections.filter(talent__type="HR")
-    tts_selections = selections.filter(talent__tts="TTS")
+    tts_selections = selections.filter(talent__type="TTS")
 
     if pk:
         pk = int(pk)
@@ -166,7 +166,7 @@ def accepted(request, client_name, pk=None):
     selections = Selection.objects.filter(client=client).filter(status='APPROVED')
     pro_selections = selections.filter(talent__type="PRO")
     home_selections = selections.filter(talent__type="HR")
-    tts_selections = selections.filter(talent__tts="TTS")
+    tts_selections = selections.filter(talent__type="TTS")
 
     if pk:
         pk = int(pk)
@@ -217,7 +217,7 @@ def rejected(request, client_name, pk=None):
     selections = Selection.objects.filter(client=client).filter(status='REJECTED')
     pro_selections = selections.filter(talent__type="PRO")
     home_selections = selections.filter(talent__type="HR")
-    tts_selections = selections.filter(talent__tts="TTS")
+    tts_selections = selections.filter(talent__type="TTS")
 
     return render(request, 'rejected.html', {
         'client': client,
