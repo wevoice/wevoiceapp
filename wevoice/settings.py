@@ -78,10 +78,10 @@ DATABASES = {
     'default': {
                     'ENGINE': 'django.db.backends.mysql',
                     'NAME': 'wevoicerel',
-                    'USER': 'root',
-                    'PASSWORD': 'root',
-                    'HOST': '/Applications/MAMP/tmp/mysql/mysql.sock',
-                    'PORT': '8889'
+                    'USER': 'wevoice',
+                    'PASSWORD': 'B0ston1!',
+                    'HOST': 'localhost',
+                    'PORT': ''
     }
 }
 
