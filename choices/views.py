@@ -1,7 +1,7 @@
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from forms import LoginForm, SelectionForm, CommentForm, DeleteCommentForm
-from models import Client, Talent, Selection, Comment, Rating
+from models import Client, Talent, Vendor, Selection, Comment, Rating
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -233,24 +233,33 @@ def rejected(request, client_name, pk=None):
 
 @login_required
 def updatedb(request):
-    # Populate client many to many field (dropdown multi-select)  on talent table
-    # for client in Client.objects.all():
-    #     for talent in Talent.objects.all():
-    #         if hasattr(talent, client.username) and getattr(talent, client.username) == "y":
-    #             talent.client_set.add(client)
-    #             talent.save()
-    #             print(talent.welo_id + client.username)
+    from legacy.models import Talent as OldTalents
 
-    # Populate vendor fk (dropdown single select) field on talent table
-    # for vendor in Vendor.objects.all():
-    #     for talent in Talent.objects.all():
-    #         if talent.vendor_name == vendor.name:
-    #             # talent.vendor_fk = vendor
-    #             # talent.save()
-    #             print(talent.welo_id + ": " + vendor.name)
+    for oldtalent in OldTalents.objects.all():
+        # The old Talent fields will be used as the new Talent fields.
+        newtalent = Talent.objects.create(
+            welo_id=oldtalent.welo_id,
+            gender=oldtalent.gender,
+            age_range=oldtalent.age_range,
+            language=oldtalent.language,
+            sample_url=oldtalent.sample_url,
+            audio_file=None,
+            times_rated=None,
+            total_rating=None,
+            comment=oldtalent.comment,
+            rate=oldtalent.rate,
+        )
 
-    # Populate client and vendor fk (dropdown single select) and status fields on selection table
-    # for client in Client.objects.filter(username='kornferry'):
+        try:
+            if oldtalent.vendor_name:
+                vendor, created = Vendor.objects.get_or_create(name=oldtalent.vendor_name)
+                newtalent.vt_vendor = vendor
+                newtalent.save()
+        except Exception as e:
+            print(e)
+
+
+
 
     # for client in Client.objects.all():
     #     protalents_for_approval, hometalents_for_approval, ttstalents_for_approval = None, None, None
@@ -410,101 +419,101 @@ def get_talent(talent_welo_id):
     return talent
 
 
-# def get_talents_for_approval(client_name):
-#
-#     proresults, homeresults, ttsresults = None, None, None
-#
-#     proquery = "SELECT * FROM talent " \
-#         "WHERE pre_approved='y' AND %s='y' AND hr='n' AND tts='n' " \
-#         "AND NOT EXISTS (SELECT * FROM %s WHERE talent.welo_id=%s.talent) " \
-#         "ORDER BY language" % (client_name, client_name, client_name)
-#     homequery = "SELECT * FROM talent " \
-#         "WHERE pre_approved='y' AND %s='y' AND hr='y' AND tts='n' " \
-#         "AND NOT EXISTS (SELECT * FROM %s WHERE talent.welo_id=%s.talent) " \
-#         "ORDER BY language" % (client_name, client_name, client_name)
-#     ttsquery = "SELECT * FROM talent " \
-#         "WHERE pre_approved='y' AND %s='y' AND hr='n' AND tts='y' " \
-#         "AND NOT EXISTS (SELECT * FROM %s WHERE talent.welo_id=%s.talent) " \
-#         "ORDER BY language" % (client_name, client_name, client_name)
-#
-#     try:
-#         proresults = Talent.objects.raw(proquery)
-#     except Exception as e:
-#         print(e)
-#
-#     try:
-#         homeresults = Talent.objects.raw(homequery)
-#     except Exception as e:
-#         print(e)
-#
-#     try:
-#         ttsresults = Talent.objects.raw(ttsquery)
-#     except Exception as e:
-#         print(e)
-#     return proresults, homeresults, ttsresults
-#
-#
-# def get_accepted_talents(client_name):
-#
-#     proresults, homeresults, ttsresults = None, None, None
-#
-#     proquery = "SELECT * FROM %s " \
-#         "WHERE accepted='y' " \
-#         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='n') " \
-#         "ORDER BY language" % (client_name, client_name)
-#     homequery = "SELECT * FROM %s " \
-#         "WHERE accepted='y' " \
-#         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='y' AND talent.tts='n') " \
-#         "ORDER BY language" % (client_name, client_name)
-#     ttsquery = "SELECT * FROM %s " \
-#         "WHERE accepted='y' " \
-#         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
-#         "ORDER BY language" % (client_name, client_name)
-#     try:
-#         proresults = Talent.objects.raw(proquery)
-#     except Exception as e:
-#         print(e)
-#
-#     try:
-#         homeresults = Talent.objects.raw(homequery)
-#     except Exception as e:
-#         print(e)
-#
-#     try:
-#         ttsresults = Talent.objects.raw(ttsquery)
-#     except Exception as e:
-#         print(e)
-#     return proresults, homeresults, ttsresults
-#
-#
-# def get_rejected_talents(client_name):
-#
-#     proresults, homeresults, ttsresults = None, None, None
-#
-#     proquery = "SELECT * FROM %s " \
-#         "WHERE accepted='n' " \
-#         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='n') " \
-#         "ORDER BY language" % (client_name, client_name)
-#     homequery = "SELECT * FROM %s " \
-#         "WHERE accepted='n' " \
-#         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='y' AND talent.tts='n') " \
-#         "ORDER BY language" % (client_name, client_name)
-#     ttsquery = "SELECT * FROM %s " \
-#         "WHERE accepted='n' " \
-#         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
-#         "ORDER BY language" % (client_name, client_name)
-#     try:
-#         proresults = Talent.objects.raw(proquery)
-#     except Exception as e:
-#         print(e)
-#
-#     try:
-#         homeresults = Talent.objects.raw(homequery)
-#     except Exception as e:
-#         print(e)
-#
-#     try:
-#         ttsresults = Talent.objects.raw(ttsquery)
-#     except Exception as e:
-#         print(e)
-#     return proresults, homeresults, ttsresults
+def get_talents_for_approval(client_name):
+
+    proresults, homeresults, ttsresults = None, None, None
+
+    proquery = "SELECT * FROM talent " \
+        "WHERE pre_approved='y' AND %s='y' AND hr='n' AND tts='n' " \
+        "AND NOT EXISTS (SELECT * FROM %s WHERE talent.welo_id=%s.talent) " \
+        "ORDER BY language" % (client_name, client_name, client_name)
+    homequery = "SELECT * FROM talent " \
+        "WHERE pre_approved='y' AND %s='y' AND hr='y' AND tts='n' " \
+        "AND NOT EXISTS (SELECT * FROM %s WHERE talent.welo_id=%s.talent) " \
+        "ORDER BY language" % (client_name, client_name, client_name)
+    ttsquery = "SELECT * FROM talent " \
+        "WHERE pre_approved='y' AND %s='y' AND hr='n' AND tts='y' " \
+        "AND NOT EXISTS (SELECT * FROM %s WHERE talent.welo_id=%s.talent) " \
+        "ORDER BY language" % (client_name, client_name, client_name)
+
+    try:
+        proresults = Talent.objects.raw(proquery)
+    except Exception as e:
+        print(e)
+
+    try:
+        homeresults = Talent.objects.raw(homequery)
+    except Exception as e:
+        print(e)
+
+    try:
+        ttsresults = Talent.objects.raw(ttsquery)
+    except Exception as e:
+        print(e)
+    return proresults, homeresults, ttsresults
+
+
+def get_accepted_talents(client_name):
+
+    proresults, homeresults, ttsresults = None, None, None
+
+    proquery = "SELECT * FROM %s " \
+        "WHERE accepted='y' " \
+        "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='n') " \
+        "ORDER BY language" % (client_name, client_name)
+    homequery = "SELECT * FROM %s " \
+        "WHERE accepted='y' " \
+        "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='y' AND talent.tts='n') " \
+        "ORDER BY language" % (client_name, client_name)
+    ttsquery = "SELECT * FROM %s " \
+        "WHERE accepted='y' " \
+        "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
+        "ORDER BY language" % (client_name, client_name)
+    try:
+        proresults = Talent.objects.raw(proquery)
+    except Exception as e:
+        print(e)
+
+    try:
+        homeresults = Talent.objects.raw(homequery)
+    except Exception as e:
+        print(e)
+
+    try:
+        ttsresults = Talent.objects.raw(ttsquery)
+    except Exception as e:
+        print(e)
+    return proresults, homeresults, ttsresults
+
+
+def get_rejected_talents(client_name):
+
+    proresults, homeresults, ttsresults = None, None, None
+
+    proquery = "SELECT * FROM %s " \
+        "WHERE accepted='n' " \
+        "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='n') " \
+        "ORDER BY language" % (client_name, client_name)
+    homequery = "SELECT * FROM %s " \
+        "WHERE accepted='n' " \
+        "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='y' AND talent.tts='n') " \
+        "ORDER BY language" % (client_name, client_name)
+    ttsquery = "SELECT * FROM %s " \
+        "WHERE accepted='n' " \
+        "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
+        "ORDER BY language" % (client_name, client_name)
+    try:
+        proresults = Talent.objects.raw(proquery)
+    except Exception as e:
+        print(e)
+
+    try:
+        homeresults = Talent.objects.raw(homequery)
+    except Exception as e:
+        print(e)
+
+    try:
+        ttsresults = Talent.objects.raw(ttsquery)
+    except Exception as e:
+        print(e)
+    return proresults, homeresults, ttsresults

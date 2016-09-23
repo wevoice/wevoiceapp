@@ -82,6 +82,12 @@ DATABASES = {
                     'PASSWORD': 'B0ston1!',
                     'HOST': 'localhost',
                     'PORT': ''
+    },
+    'legacy': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'wevoice2',
+        'USER': 'wevoice',
+        'PASSWORD': 'B0ston1!'
     }
 }
 
@@ -142,4 +148,7 @@ STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 
 LOGIN_URL = '/'
+
+
+DATABASE_ROUTERS = ['legacy.router.LegacyRouter']
 
