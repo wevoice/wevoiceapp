@@ -285,7 +285,7 @@ class Kornferry(models.Model):
 
 
 class Language(models.Model):
-    id = models.AutoField(unique=True)
+    # id = models.AutoField(unique=True)
     language = models.TextField()
 
     class Meta:

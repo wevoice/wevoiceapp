@@ -1,7 +1,8 @@
 from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from forms import LoginForm, SelectionForm, CommentForm, DeleteCommentForm
-from models import Client, Talent, Vendor, Selection, Comment, Rating
+from django.contrib.auth.models import User
+from models import Admin, Client, Talent, Vendor, Language, Selection, Comment, Main, Rating, UserProfile
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -234,171 +235,321 @@ def rejected(request, client_name, pk=None):
 @login_required
 def updatedb(request):
     from legacy.models import Talent as OldTalents
+    from legacy.models import Client as OldClients
+    from legacy.models import Language as OldLanguages
+    from legacy.models import Admin as OldAdmin
+    from legacy.models import Main as OldMain
+    from legacy.models import Vendor as OldVendors
+    from django.conf import settings
+    from django.core.files import File
+    import os
+
+    Talent.objects.all().delete()
+    Client.objects.all().delete()
+    Language.objects.all().delete()
+    Admin.objects.all().delete()
+    Main.objects.all().delete()
+    Vendor.objects.all().delete()
+    Selection.objects.all().delete()
+    UserProfile.objects.all().delete()
+
+    superclient = Client.objects.create(
+        name="Welocalize",
+        username="localize",
+        password="Welo!"
+    )
+
+    UserProfile.objects.create(
+        user=User.objects.get(username='william.burton'),
+        client=superclient
+    )
+
+    for oldvendor in OldVendors.objects.all():
+        Vendor.objects.create(
+            name=oldvendor.name,
+            username=oldvendor.username,
+            password=oldvendor.password
+        )
+
+    for oldmain in OldMain.objects.all():
+        Main.objects.create(
+            talent=oldmain.talent,
+            client=oldmain.client,
+            gender=oldmain.gender,
+            age_range=oldmain.age_range,
+            language=oldmain.language,
+            sample_url=oldmain.sample_url,
+            accepted=oldmain.accepted,
+            comment=oldmain.comment
+        )
+
+    for oldlanguage in OldLanguages.objects.all():
+        Language.objects.create(
+            language=oldlanguage.language
+        )
+
+    for oldadmin in OldAdmin.objects.all():
+        Admin.objects.create(
+            username=oldadmin.username,
+            password =oldadmin.password
+        )
 
     for oldtalent in OldTalents.objects.all():
         # The old Talent fields will be used as the new Talent fields.
-        newtalent = Talent.objects.create(
-            welo_id=oldtalent.welo_id,
-            gender=oldtalent.gender,
-            age_range=oldtalent.age_range,
-            language=oldtalent.language,
-            sample_url=oldtalent.sample_url,
-            audio_file=None,
-            times_rated=None,
-            total_rating=None,
-            comment=oldtalent.comment,
-            rate=oldtalent.rate,
-        )
+        vendor, created = Vendor.objects.get_or_create(name=oldtalent.vendor_name)
+
+        try:
+            newtalent = Talent.objects.create(
+                old_talent_id=oldtalent.id,
+                welo_id=oldtalent.welo_id,
+                vendor=vendor,
+                gender=oldtalent.gender,
+                age_range=oldtalent.age_range,
+                language=oldtalent.language,
+                sample_url=oldtalent.sample_url,
+                audio_file=None,
+                times_rated=None,
+                total_rating=None,
+                comment=oldtalent.comment,
+                rate=oldtalent.rate,
+            )
+            newtalent.save()
+        except Exception as e:
+            print(e)
 
         try:
             if oldtalent.vendor_name:
                 vendor, created = Vendor.objects.get_or_create(name=oldtalent.vendor_name)
-                newtalent.vt_vendor = vendor
+                newtalent.vendor = vendor
                 newtalent.save()
+        except Exception as e:
+            print(e)
+
+        try:
+            if oldtalent.hr == "y":
+                newtalent.type = "HR"
+            elif oldtalent.tts == 'y':
+                newtalent.type = "TTS"
+            else:
+                newtalent.type = "PRO"
+            newtalent.save()
+        except Exception as e:
+            print(e)
+
+        try:
+            with open(os.path.join(settings.MEDIA_ROOT, oldtalent.sample_url.split('/')[1]), 'rb') as doc_file:
+                newtalent.audio_file.save('sample_' + newtalent.sample_url.split('/')[1], File(doc_file), save=True)
+                newtalent.save()
+        except Exception as e:
+            print(e)
+
+    for oldclient in OldClients.objects.all():
+        try:
+            if oldclient.username == "demo_client":
+                test = "test"
+            newclient = Client.objects.create(
+                name=oldclient.name,
+                username=oldclient.username,
+                password=oldclient.password
+            )
+            newuser, created = User.objects.get_or_create(
+                first_name=oldclient.name,
+                last_name="Admin",
+                username=oldclient.username,
+                password=oldclient.password
+            )
+            UserProfile.objects.create(
+                user=newuser,
+                client=newclient
+            )
         except Exception as e:
             print(e)
 
 
 
+        protalents_for_approval, hometalents_for_approval, ttstalents_for_approval = None, None, None
+        pro_accepted_talents, home_accepted_talents, tts_accepted_talents = None, None, None
+        pro_rejected_talents, home_rejected_talents, tts_rejected_talents = None, None, None
 
-    # for client in Client.objects.all():
-    #     protalents_for_approval, hometalents_for_approval, ttstalents_for_approval = None, None, None
-    #     pro_accepted_talents, home_accepted_talents, tts_accepted_talents = None, None, None
-    #     pro_rejected_talents, home_rejected_talents, tts_rejected_talents = None, None, None
-    #     try:
-    #         protalents_for_approval, hometalents_for_approval, ttstalents_for_approval = \
-    #             get_talents_for_approval(client.username)
-    #     except Exception as e:
-    #         print(e)
-    #     try:
-    #         querytest = protalents_for_approval[0]
-    #         for talent in protalents_for_approval:
-    #             try:
-    #                 Selection.objects.create(talent=talent, client=client, status="PREAPPROVED")
-    #             except Exception as e:
-    #                 print(e)
-    #     except Exception as e:
-    #         print(e)
-    #     try:
-    #         querytest = protalents_for_approval[0]
-    #         for talent in hometalents_for_approval:
-    #             try:
-    #                 Selection.objects.create(talent=talent, client=client, status="PREAPPROVED")
-    #             except Exception as e:
-    #                 print(e)
-    #     except Exception as e:
-    #         print(e)
-    #     try:
-    #         querytest = protalents_for_approval[0]
-    #         for talent in ttstalents_for_approval:
-    #             try:
-    #                 Selection.objects.create(talent=talent, client=client, status="PREAPPROVED")
-    #             except Exception as e:
-    #                 print(e)
-    #     except Exception as e:
-    #         print(e)
-    #
-    #     try:
-    #         pro_accepted_talents, home_accepted_talents, tts_accepted_talents = get_accepted_talents(client.username)
-    #     except Exception as e:
-    #         print(e)
-    #     try:
-    #         querytest = pro_accepted_talents[0]
-    #         for talent in pro_accepted_talents:
-    #             try:
-    #                 Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client,
-    #                                          status="APPROVED")
-    #             except Exception as e:
-    #                 print(e)
-    #     except Exception as e:
-    #         print(e)
-    #     try:
-    #         querytest = pro_accepted_talents[0]
-    #         for talent in home_accepted_talents:
-    #             try:
-    #                 Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client,
-    #                                          status="APPROVED")
-    #             except Exception as e:
-    #                 print(e)
-    #     except Exception as e:
-    #         print(e)
-    #     try:
-    #         querytest = pro_accepted_talents[0]
-    #         for talent in tts_accepted_talents:
-    #             try:
-    #                 Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client,
-    #                                          status="APPROVED")
-    #             except Exception as e:
-    #                 print(e)
-    #     except Exception as e:
-    #         print(e)
-    #
-    #     try:
-    #         pro_rejected_talents, home_rejected_talents, tts_rejected_talents = get_rejected_talents(client.username)
-    #     except Exception as e:
-    #         print(e)
-    #     try:
-    #         querytest = pro_rejected_talents[0]
-    #         for talent in pro_rejected_talents:
-    #             try:
-    #                 Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client,
-    #                                          status="REJECTED")
-    #             except Exception as e:
-    #                 print(e)
-    #     except Exception as e:
-    #         print(e)
-    #     try:
-    #         querytest = pro_rejected_talents[0]
-    #         for talent in home_rejected_talents:
-    #             try:
-    #                 Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client,
-    #                                          status="REJECTED")
-    #             except Exception as e:
-    #                 print(e)
-    #     except Exception as e:
-    #         print(e)
-    #     try:
-    #         querytest = pro_rejected_talents[0]
-    #         for talent in tts_rejected_talents:
-    #             try:
-    #                 Selection.objects.create(talent=Talent.objects.get(welo_id=talent.talent), client=client,
-    #                                          status="REJECTED")
-    #             except Exception as e:
-    #                 print(e)
-    #     except Exception as e:
-    #         print(e)
+        try:
+            protalents_for_approval, hometalents_for_approval, ttstalents_for_approval = \
+                get_talents_for_approval(oldclient.username, OldTalents)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = protalents_for_approval[0]
+            for oldtalent in protalents_for_approval:
+                try:
+                    talent = None
+                    if hasattr(oldtalent, 'welo_id'):
+                        talent = Talent.objects.get(welo_id=oldtalent.welo_id)
+                    elif hasattr(oldtalent, 'talent'):
+                        talent = Talent.objects.get(welo_id=oldtalent.talent)
+                    Selection.objects.get_or_create(talent=talent, client=newclient, status="PREAPPROVED")
+                except Exception as e:
+                    print(e)
+                    if hasattr(oldtalent, 'welo_id'):
+                        print("welo_id: " + oldtalent.welo_id + "client: " + newclient.name)
+                    elif hasattr(oldtalent, 'talent'):
+                        print("talent: " + oldtalent.talent + "client: " + newclient.name)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = protalents_for_approval[0]
+            for oldtalent in hometalents_for_approval:
+                try:
+                    talent = None
+                    if hasattr(oldtalent, 'welo_id'):
+                        talent = Talent.objects.get(welo_id=oldtalent.welo_id)
+                    elif hasattr(oldtalent, 'talent'):
+                        talent = Talent.objects.get(welo_id=oldtalent.talent)
+                    Selection.objects.get_or_create(talent=talent, client=newclient, status="PREAPPROVED")
+                except Exception as e:
+                    print(e)
+                    if hasattr(oldtalent, 'welo_id'):
+                        print("welo_id: " + oldtalent.welo_id + "client: " + newclient.name)
+                    elif hasattr(oldtalent, 'talent'):
+                        print("talent: " + oldtalent.talent + "client: " + newclient.name)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = protalents_for_approval[0]
+            for oldtalent in ttstalents_for_approval:
+                try:
+                    talent = None
+                    if hasattr(oldtalent, 'welo_id'):
+                        talent = Talent.objects.get(welo_id=oldtalent.welo_id)
+                    elif hasattr(oldtalent, 'talent'):
+                        talent = Talent.objects.get(welo_id=oldtalent.talent)
+                    Selection.objects.get_or_create(talent=talent, client=newclient, status="PREAPPROVED")
+                except Exception as e:
+                    print(e)
+                    if hasattr(oldtalent, 'welo_id'):
+                        print("welo_id: " + oldtalent.welo_id + "client: " + newclient.name)
+                    elif hasattr(oldtalent, 'talent'):
+                        print("talent: " + oldtalent.talent + "client: " + newclient.name)
+        except Exception as e:
+            print(e)
 
-    # Move sound files path to audio_file field
-    # for talent in Talent.objects.all():
-    #     try:
-    #         with open(os.path.join(settings.MEDIA_ROOT, talent.sample_url.split('/')[1]), 'rb') as doc_file:
-    #             talent.audio_file.save('sample_' + talent.sample_url.split('/')[1], File(doc_file), save=True)
-    #             talent.save()
-    #     except Exception as e:
-    #         print(e)
+        try:
+            pro_accepted_talents, home_accepted_talents, tts_accepted_talents = get_accepted_talents(
+                oldclient.username, OldTalents)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_accepted_talents[0]
+            for oldtalent in pro_accepted_talents:
+                try:
+                    talent = None
+                    if hasattr(oldtalent, 'welo_id'):
+                        talent = Talent.objects.get(welo_id=oldtalent.welo_id)
+                    elif hasattr(oldtalent, 'talent'):
+                        talent = Talent.objects.get(welo_id=oldtalent.talent)
+                    Selection.objects.get_or_create(talent=talent, client=newclient, status="APPROVED")
+                except Exception as e:
+                    print(e)
+                    if hasattr(oldtalent, 'welo_id'):
+                        print("welo_id: " + oldtalent.welo_id + "client: " + newclient.name)
+                    elif hasattr(oldtalent, 'talent'):
+                        print("talent: " + oldtalent.talent + "client: " + newclient.name)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_accepted_talents[0]
+            for oldtalent in home_accepted_talents:
+                try:
+                    talent = None
+                    if hasattr(oldtalent, 'welo_id'):
+                        talent = Talent.objects.get(welo_id=oldtalent.welo_id)
+                    elif hasattr(oldtalent, 'talent'):
+                        talent = Talent.objects.get(welo_id=oldtalent.talent)
+                    Selection.objects.get_or_create(talent=talent, client=newclient, status="APPROVED")
+                except Exception as e:
+                    print(e)
+                    if hasattr(oldtalent, 'welo_id'):
+                        print("welo_id: " + oldtalent.welo_id + "client: " + newclient.name)
+                    elif hasattr(oldtalent, 'talent'):
+                        print("talent: " + oldtalent.talent + "client: " + newclient.name)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_accepted_talents[0]
+            for oldtalent in tts_accepted_talents:
+                try:
+                    talent = None
+                    if hasattr(oldtalent, 'welo_id'):
+                        talent = Talent.objects.get(welo_id=oldtalent.welo_id)
+                    elif hasattr(oldtalent, 'talent'):
+                        talent = Talent.objects.get(welo_id=oldtalent.talent)
+                    Selection.objects.get_or_create(talent=talent, client=newclient, status="APPROVED")
+                except Exception as e:
+                    print(e)
+                    if hasattr(oldtalent, 'welo_id'):
+                        print("welo_id: " + oldtalent.welo_id + "client: " + newclient.name)
+                    elif hasattr(oldtalent, 'talent'):
+                        print("talent: " + oldtalent.talent + "client: " + newclient.name)
+        except Exception as e:
+            print(e)
 
-    # Set primary key for Vendor on Talent
-    # for talent in Talent.objects.all():
-    #     try:
-    #         if talent.vendor_name:
-    #             vendor, created = Vendor.objects.get_or_create(name=talent.vendor_name)
-    #             talent.vt_vendor = vendor
-    #             talent.save()
-    #     except Exception as e:
-    #         print(e)
-
-    # for talent in Talent.objects.all():
-    #     try:
-    #         if talent.hr == "y":
-    #             talent.type = "HR"
-    #         elif talent.tts == 'y':
-    #             talent.type = "TTS"
-    #         else:
-    #             talent.type = "PRO"
-    #         talent.save()
-    #
-    #     except Exception as e:
-    #         print(e)
+        try:
+            pro_rejected_talents, home_rejected_talents, tts_rejected_talents = get_rejected_talents(
+                newclient.username, OldTalents)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_rejected_talents[0]
+            for oldtalent in pro_rejected_talents:
+                try:
+                    talent = None
+                    if hasattr(oldtalent, 'welo_id'):
+                        talent = Talent.objects.get(welo_id=oldtalent.welo_id)
+                    elif hasattr(oldtalent, 'talent'):
+                        talent = Talent.objects.get(welo_id=oldtalent.talent)
+                    Selection.objects.get_or_create(talent=talent, client=newclient, status="REJECTED")
+                except Exception as e:
+                    print(e)
+                    if hasattr(oldtalent, 'welo_id'):
+                        print("welo_id: " + oldtalent.welo_id + "client: " + newclient.name)
+                    elif hasattr(oldtalent, 'talent'):
+                        print("talent: " + oldtalent.talent + "client: " + newclient.name)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_rejected_talents[0]
+            for oldtalent in home_rejected_talents:
+                try:
+                    talent = None
+                    if hasattr(oldtalent, 'welo_id'):
+                        talent = Talent.objects.get(welo_id=oldtalent.welo_id)
+                    elif hasattr(oldtalent, 'talent'):
+                        talent = Talent.objects.get(welo_id=oldtalent.talent)
+                    Selection.objects.get_or_create(talent=talent, client=newclient, status="REJECTED")
+                except Exception as e:
+                    print(e)
+                    if hasattr(oldtalent, 'welo_id'):
+                        print("welo_id: " + oldtalent.welo_id + "client: " + newclient.name)
+                    elif hasattr(oldtalent, 'talent'):
+                        print("talent: " + oldtalent.talent + "client: " + newclient.name)
+        except Exception as e:
+            print(e)
+        try:
+            querytest = pro_rejected_talents[0]
+            for oldtalent in tts_rejected_talents:
+                try:
+                    talent = None
+                    if hasattr(oldtalent, 'welo_id'):
+                        talent = Talent.objects.get(welo_id=oldtalent.welo_id)
+                    elif hasattr(oldtalent, 'talent'):
+                        talent = Talent.objects.get(welo_id=oldtalent.talent)
+                    Selection.objects.get_or_create(talent=talent, client=newclient, status="REJECTED")
+                except Exception as e:
+                    print(e)
+                    if hasattr(oldtalent, 'welo_id'):
+                        print("welo_id: " + oldtalent.welo_id + "client: " + newclient.name)
+                    elif hasattr(oldtalent, 'talent'):
+                        print("talent: " + oldtalent.talent + "client: " + newclient.name)
+        except Exception as e:
+            print(e)
 
     return HttpResponse("All done!")
 
@@ -414,12 +565,12 @@ def get_client(client_name):
 def get_talent(talent_welo_id):
     try:
         talent = Talent.objects.get(welo_id=talent_welo_id)
-    except Client.DoesNotExist:
+    except Talent.DoesNotExist:
         raise Http404("That talent does not exist")
     return talent
 
 
-def get_talents_for_approval(client_name):
+def get_talents_for_approval(client_name, TalentObject):
 
     proresults, homeresults, ttsresults = None, None, None
 
@@ -437,23 +588,23 @@ def get_talents_for_approval(client_name):
         "ORDER BY language" % (client_name, client_name, client_name)
 
     try:
-        proresults = Talent.objects.raw(proquery)
+        proresults = TalentObject.objects.raw(proquery)
     except Exception as e:
         print(e)
 
     try:
-        homeresults = Talent.objects.raw(homequery)
+        homeresults = TalentObject.objects.raw(homequery)
     except Exception as e:
         print(e)
 
     try:
-        ttsresults = Talent.objects.raw(ttsquery)
+        ttsresults = TalentObject.objects.raw(ttsquery)
     except Exception as e:
         print(e)
     return proresults, homeresults, ttsresults
 
 
-def get_accepted_talents(client_name):
+def get_accepted_talents(client_name, TalentObject):
 
     proresults, homeresults, ttsresults = None, None, None
 
@@ -470,23 +621,23 @@ def get_accepted_talents(client_name):
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
         "ORDER BY language" % (client_name, client_name)
     try:
-        proresults = Talent.objects.raw(proquery)
+        proresults = TalentObject.objects.raw(proquery)
     except Exception as e:
         print(e)
 
     try:
-        homeresults = Talent.objects.raw(homequery)
+        homeresults = TalentObject.objects.raw(homequery)
     except Exception as e:
         print(e)
 
     try:
-        ttsresults = Talent.objects.raw(ttsquery)
+        ttsresults = TalentObject.objects.raw(ttsquery)
     except Exception as e:
         print(e)
     return proresults, homeresults, ttsresults
 
 
-def get_rejected_talents(client_name):
+def get_rejected_talents(client_name, TalentObject):
 
     proresults, homeresults, ttsresults = None, None, None
 
@@ -503,17 +654,17 @@ def get_rejected_talents(client_name):
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
         "ORDER BY language" % (client_name, client_name)
     try:
-        proresults = Talent.objects.raw(proquery)
+        proresults = TalentObject.objects.raw(proquery)
     except Exception as e:
         print(e)
 
     try:
-        homeresults = Talent.objects.raw(homequery)
+        homeresults = TalentObject.objects.raw(homequery)
     except Exception as e:
         print(e)
 
     try:
-        ttsresults = Talent.objects.raw(ttsquery)
+        ttsresults = TalentObject.objects.raw(ttsquery)
     except Exception as e:
         print(e)
     return proresults, homeresults, ttsresults

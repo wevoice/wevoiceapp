@@ -9,9 +9,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-
 from django.conf import settings
-import os.path
 
 
 class Admin(models.Model):
@@ -306,9 +304,8 @@ class Talent(models.Model):
     tts = models.TextField()
     hr = models.TextField()
     welo_id = models.TextField()
-    vendor_id = models.TextField()
-    vendor_name = models.TextField()
-    vt_vendor = models.ForeignKey("Vendor", default=9)
+    old_talent_id = models.IntegerField(default=0, blank=True, null=True)
+    vendor = models.ForeignKey("Vendor", default=9, blank=True, null=True)
     gender = models.TextField()
     age_range = models.TextField()
     language = models.TextField()
@@ -430,9 +427,9 @@ class Selection(models.Model):
         return self.talent.age_range
     talent_age_range.short_description = 'Age Range'
 
-    def talent_vt_vendor(self):
-        return self.talent.vt_vendor
-    talent_vt_vendor.short_description = 'Vendor'
+    def talent_vendor(self):
+        return self.talent.vendor
+    talent_vendor.short_description = 'Vendor'
 
     def audio_file_player(self):
         """audio player tag for admin"""
