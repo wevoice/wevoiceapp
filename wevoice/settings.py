@@ -77,18 +77,20 @@ WSGI_APPLICATION = 'wevoice.wsgi.application'
 
 DATABASES = {
     'default': {
-                    'ENGINE': 'django.db.backends.mysql',
-                    'NAME': 'wevoicerel',
-                    'USER': 'wevoice',
-                    'PASSWORD': 'B0ston1!',
-                    'HOST': 'localhost',
-                    'PORT': ''
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'wevoicerel',
+        'USER': 'root',
+        'PASSWORD': 'root',
+        'HOST': 'localhost',
+        'PORT': ''
     },
     'legacy': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'wevoice2',
-        'USER': 'wevoice',
-        'PASSWORD': 'B0ston1!'
+        'USER': 'root',
+        'PASSWORD': 'root',
+        'HOST': 'localhost',
+        'PORT': ''
     }
 }
 
@@ -96,18 +98,18 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    # },
 ]
 
 # Internationalization
@@ -152,4 +154,3 @@ LOGIN_URL = '/'
 
 
 DATABASE_ROUTERS = ['legacy.router.LegacyRouter']
-
