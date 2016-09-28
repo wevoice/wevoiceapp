@@ -1,8 +1,10 @@
 wvrel
+wevoiceenv
 .idea
 .DS_Store
 *.pyc
 staticfiles
+static
 choices/static/media
 .env
 db.sqlite3
