@@ -304,6 +304,14 @@ def updatedb(request):
     for oldtalent in OldTalents.objects.all():
         # The old Talent fields will be used as the new Talent fields.
         vendor, created = Vendor.objects.get_or_create(name=oldtalent.vendor_name)
+        language, created = Language.objects.get_or_create(language=oldtalent.language)
+
+        if oldtalent.age_range == "16-25":
+            age_range = 2
+        elif oldtalent.age_range == "26-45":
+            age_range = 3
+        elif oldtalent.age_range == "46-75":
+            age_range = 4
 
         try:
             newtalent = Talent.objects.create(
@@ -311,8 +319,8 @@ def updatedb(request):
                 welo_id=oldtalent.welo_id,
                 vendor=vendor,
                 gender=oldtalent.gender,
-                age_range=oldtalent.age_range,
-                language=oldtalent.language,
+                age_range=age_range,
+                language=language,
                 audio_file=None,
                 times_rated=None,
                 total_rating=None,

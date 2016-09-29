@@ -220,6 +220,9 @@ class Language(models.Model):
         managed = True
         db_table = 'language'
 
+    def __unicode__(self):
+        return self.language
+
 
 class Main(models.Model):
     talent = models.TextField()
@@ -300,13 +303,28 @@ class Talent(models.Model):
         ("HR", "Home Recording"),
         ("TTS", "Text To Speech")
     )
+
+    GENDER_CHOICES = (
+        ("M", "Male"),
+        ("F", "Female"),
+        ("U", "Undeclared")
+    )
+
+    AGE_RANGE = (
+        (1, "1-15"),
+        (2, "16-25"),
+        (3, "26-45"),
+        (4, "46-75"),
+        (5, "75 +")
+    )
+
     type = models.CharField(max_length=16, choices=TYPE_CHOICES, default="PR0", blank=True, null=True)
     welo_id = models.TextField(blank=True, null=True)
     old_talent_id = models.IntegerField(default=0, blank=True, null=True)
     vendor = models.ForeignKey("Vendor", default=9, blank=True, null=True)
-    gender = models.TextField(blank=True, null=True)
-    age_range = models.TextField(blank=True, null=True)
-    language = models.TextField(blank=True, null=True)
+    gender = models.CharField(max_length=32, choices=GENDER_CHOICES, default=1, blank=True, null=True)
+    age_range = models.CharField(max_length=32, choices=AGE_RANGE, default=1, blank=True, null=True)
+    language = models.ForeignKey("Language", blank=True, null=True)
     audio_file = models.FileField(blank=True, null=True)
     times_rated = models.IntegerField(default=0, blank=True, null=True)
     total_rating = models.IntegerField(default=0, blank=True, null=True)
@@ -333,7 +351,6 @@ class Talent(models.Model):
     comment = models.TextField(null=True, blank=True)
     allclients = models.TextField(blank=True, null=True)
     rate = models.TextField(null=True, blank=True)
-
 
     def __unicode__(self):
         return self.welo_id
