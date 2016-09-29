@@ -5,6 +5,7 @@ wevoiceenv
 *.pyc
 staticfiles
 static
+media
 choices/static/media
 .env
 db.sqlite3

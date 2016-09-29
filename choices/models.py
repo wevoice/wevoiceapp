@@ -300,24 +300,21 @@ class Talent(models.Model):
         ("HR", "Home Recording"),
         ("TTS", "Text To Speech")
     )
-    type = models.CharField(max_length=16, choices=TYPE_CHOICES, default="PR0")
-    tts = models.TextField()
-    hr = models.TextField()
-    welo_id = models.TextField()
+    type = models.CharField(max_length=16, choices=TYPE_CHOICES, default="PR0", blank=True, null=True)
+    welo_id = models.TextField(blank=True, null=True)
     old_talent_id = models.IntegerField(default=0, blank=True, null=True)
     vendor = models.ForeignKey("Vendor", default=9, blank=True, null=True)
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    audio_file = models.FileField(blank=True)
+    gender = models.TextField(blank=True, null=True)
+    age_range = models.TextField(blank=True, null=True)
+    language = models.TextField(blank=True, null=True)
+    audio_file = models.FileField(blank=True, null=True)
     times_rated = models.IntegerField(default=0, blank=True, null=True)
     total_rating = models.IntegerField(default=0, blank=True, null=True)
 
     def audio_file_player(self):
         """audio player tag for admin"""
         if self.audio_file:
-            file_url = settings.MEDIA_URL + str(self.audio_file)
+            file_url = self.audio_file.url
             player_string = \
                 '<div class="simple-player-container" style="background-color: #ffffff;">' \
                 '<audio class="player" preload="none" src="%s"></audio>' \
@@ -333,24 +330,10 @@ class Talent(models.Model):
 
     average_rating.short_description = "Rating"
 
-    pre_approved = models.TextField()
     comment = models.TextField(null=True, blank=True)
-    allclients = models.TextField()
-    vmware = models.TextField()
-    google = models.TextField()
-    gt = models.TextField()
-    nrm = models.TextField()
+    allclients = models.TextField(blank=True, null=True)
     rate = models.TextField(null=True, blank=True)
-    hd = models.TextField()
-    workday = models.TextField()
-    cisco = models.TextField()
-    kornferry = models.TextField()
-    jdeere = models.TextField()
-    anheuserbusch = models.TextField()
-    apple = models.TextField()
-    thomsonreuters = models.TextField()
-    esterline = models.TextField()
-    utc = models.TextField()
+
 
     def __unicode__(self):
         return self.welo_id
