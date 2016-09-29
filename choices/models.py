@@ -219,6 +219,7 @@ class Language(models.Model):
     class Meta:
         managed = True
         db_table = 'language'
+        ordering = ['language']
 
     def __unicode__(self):
         return self.language
