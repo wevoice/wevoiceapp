@@ -130,7 +130,7 @@ def for_approval(request, client_name, pk=None):
         comment_form = CommentForm
         delete_comment_form = DeleteCommentForm
 
-    return render(request, 'for_approval.html', {
+    return render(request, 'selections.html', {
         'client': client,
         'form': form,
         'comment_form': comment_form,
@@ -138,7 +138,8 @@ def for_approval(request, client_name, pk=None):
         'pro_selections': pro_selections,
         'home_selections': home_selections,
         'tts_selections': tts_selections,
-        'pk': pk
+        'pk': pk,
+        'status': 'for_approval'
     })
 
 
@@ -176,7 +177,7 @@ def accepted(request, client_name, pk=None):
         comment_form = CommentForm
         delete_comment_form = DeleteCommentForm
 
-    return render(request, 'accepted.html', {
+    return render(request, 'selections.html', {
         'client': client,
         'form': form,
         'comment_form': comment_form,
@@ -185,6 +186,7 @@ def accepted(request, client_name, pk=None):
         'home_selections': home_selections,
         'tts_selections': tts_selections,
         'pk': pk,
+        'status': 'accepted'
     })
 
 
@@ -222,7 +224,7 @@ def rejected(request, client_name, pk=None):
     home_selections = selections.filter(talent__type="HR")
     tts_selections = selections.filter(talent__type="TTS")
 
-    return render(request, 'rejected.html', {
+    return render(request, 'selections.html', {
         'client': client,
         'form': form,
         'comment_form': comment_form,
@@ -230,7 +232,8 @@ def rejected(request, client_name, pk=None):
         'pro_selections': pro_selections,
         'home_selections': home_selections,
         'tts_selections': tts_selections,
-        'pk': pk
+        'pk': pk,
+        'status': 'rejected'
     })
 
 
@@ -246,9 +249,6 @@ def updatedb(request):
     from legacy.models import Admin as OldAdmin
     from legacy.models import Main as OldMain
     from legacy.models import Vendor as OldVendors
-    from django.conf import settings
-    from django.core.files import File
-    import os
 
     Talent.objects.all().delete()
     Language.objects.all().delete()
@@ -305,7 +305,7 @@ def updatedb(request):
         # The old Talent fields will be used as the new Talent fields.
         vendor, created = Vendor.objects.get_or_create(name=oldtalent.vendor_name)
         language, created = Language.objects.get_or_create(language=oldtalent.language)
-
+        age_range = 3
         if oldtalent.age_range == "16-25":
             age_range = 2
         elif oldtalent.age_range == "26-45":

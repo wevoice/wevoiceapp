@@ -23,16 +23,16 @@
                         </div>
                         <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
                             <tr>
-                                <td class='talent_admin_table_header' width='20%'>ID</td>
+                                <td class='talent_admin_table_header' width='28%'>ID</td>
                                 <td class='talent_admin_table_header' width='7%'>GENDER</td>
                                 <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
-                                <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
+                                <td class='talent_admin_table_header' width='23%'>COMMENTS / RATING</td>
                                 <td class='talent_admin_table_header' width='13%'>LISTEN</td>
                                 <td class='talent_admin_table_header' width='22%'>STATUS</td>
                             </tr>
                             {% for selection in language.list %}
                                 <tr>
-                                    <td class='talent_admin_table'>{{ selection.talent.welo_id }}</td>
+                                    <td class='talent_admin_table'>{{ selection.talent.welo_id|truncatechars:35 }}</td>
                                     <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
                                     <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
                                     <td class='talent_admin_table'>
@@ -58,7 +58,7 @@
                                     </td>
                                     <td class='talent_admin_table'>
                                         <audio class='player' preload='none' src='{{ selection.talent.audio_file.url }}'></audio>
-                                        <a href='/{{ selection.talent.sample_url }}' target='_blank'>
+                                        <a href='{{ selection.talent.audio_file.url }}' target='_blank'>
                                             <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
                                         </a>
                                     </td>
@@ -103,10 +103,10 @@
                         </div>
                         <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
                             <tr>
-                                <td class='talent_admin_table_header' width='20%'>ID</td>
+                                <td class='talent_admin_table_header' width='28%'>ID</td>
                                 <td class='talent_admin_table_header' width='7%'>GENDER</td>
                                 <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
-                                <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
+                                <td class='talent_admin_table_header' width='23%'>COMMENTS / RATING</td>
                                 <td class='talent_admin_table_header' width='13%'>LISTEN</td>
                                 <td class='talent_admin_table_header' width='22%'>STATUS</td>
                             </tr>
@@ -138,7 +138,7 @@
                                     </td>
                                     <td class='talent_admin_table'>
                                         <audio class='player' preload='none' src='{{ selection.talent.audio_file.url }}'></audio>
-                                        <a href='/{{ selection.talent.sample_url }}' target='_blank'>
+                                        <a href='{{ selection.talent.audio_file.url }}' target='_blank'>
                                             <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
                                         </a>
                                     </td>
@@ -183,10 +183,10 @@
                         </div>
                         <table cellpadding='0' cellspacing='0' class='talent_admin_table' width='100%'>
                             <tr>
-                                <td class='talent_admin_table_header' width='20%'>ID</td>
+                                <td class='talent_admin_table_header' width='28%'>ID</td>
                                 <td class='talent_admin_table_header' width='7%'>GENDER</td>
                                 <td class='talent_admin_table_header' width='7%'>AGE RANGE</td>
-                                <td class='talent_admin_table_header' width='26%'>COMMENTS / RATING</td>
+                                <td class='talent_admin_table_header' width='23%'>COMMENTS / RATING</td>
                                 <td class='talent_admin_table_header' width='13%'>LISTEN</td>
                                 <td class='talent_admin_table_header' width='22%'>STATUS</td>
                             </tr>
@@ -218,7 +218,7 @@
                                     </td>
                                     <td class='talent_admin_table'>
                                         <audio class='player' preload='none' src='{{ selection.talent.audio_file.url }}'></audio>
-                                        <a href='/{{ selection.talent.sample_url }}' target='_blank'>
+                                        <a href='{{ selection.talent.audio_file.url }}' target='_blank'>
                                             <img alt='' class='download_button' height='16' src='{% static "downld.png" %}' width='16'>
                                         </a>
                                     </td>
@@ -242,5 +242,3 @@
         </table>
     {% endif %}
 {% endblock main %}
-
-
