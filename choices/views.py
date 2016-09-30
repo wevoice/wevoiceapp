@@ -101,7 +101,6 @@ def add_comment(request, client_name, pk):
 
 
 @login_required
-@cache_page(60 * 15)
 def for_approval(request, client_name, pk=None):
     # foo = cache.get('foo')
     # cache.set('foo', 'bar')
@@ -150,7 +149,6 @@ def for_approval(request, client_name, pk=None):
 
 
 @login_required
-@cache_page(60 * 15)
 def accepted(request, client_name, pk=None):
     comment_form = None
     delete_comment_form = None
@@ -198,7 +196,6 @@ def accepted(request, client_name, pk=None):
 
 
 @login_required
-@cache_page(60 * 15)
 def rejected(request, client_name, pk=None):
     comment_form = None
     delete_comment_form = None
