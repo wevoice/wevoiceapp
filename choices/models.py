@@ -12,6 +12,9 @@ from django.utils import timezone
 from django.conf import settings
 
 
+DATA_SCHEMA_REVISION = 1
+
+
 class Admin(models.Model):
     username = models.TextField()
     password = models.TextField()
@@ -65,53 +68,6 @@ class UserProfile(models.Model):
         ordering = ['user__username']
 
 
-class Anheuserbusch(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'anheuserbusch'
-
-
-class Apple(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'apple'
-        verbose_name = 'The Force'
-        verbose_name_plural = 'The Force'
-
-
-class Cisco(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'cisco'
-
-
 class Client(models.Model):
     name = models.TextField()
     username = models.TextField()
@@ -126,96 +82,6 @@ class Client(models.Model):
         ordering = ['name']
 
 
-class Esterline(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'esterline'
-
-
-class Google(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'google'
-
-
-class Gt(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'gt'
-
-
-class Hd(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'hd'
-
-
-class Jdeere(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'jdeere'
-
-
-class Kornferry(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'kornferry'
-
-
 class Language(models.Model):
     language = models.TextField()
 
@@ -228,38 +94,6 @@ class Language(models.Model):
         return self.language
 
 
-class Main(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'main'
-        verbose_name = 'Main Talent'
-        verbose_name_plural = 'Main Talents'
-
-
-class Nrm(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'nrm'
-
-
 class Rating(models.Model):
     rating = models.IntegerField(default=0, blank=True, null=True)
     talent = models.ForeignKey('Talent')
@@ -267,38 +101,6 @@ class Rating(models.Model):
 
     class Meta:
         unique_together = ('talent', 'rater',)
-
-
-class Resaas(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'resaas'
-        verbose_name = 'Resaas'
-        verbose_name_plural = 'Resaas'
-
-
-class Thomsonreuters(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'thomsonreuters'
 
 
 class Talent(models.Model):
@@ -379,36 +181,6 @@ class Vendor(models.Model):
         ordering = ['name']
 
 
-class Vmware(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'vmware'
-
-
-class Workday(models.Model):
-    talent = models.TextField()
-    client = models.TextField()
-    gender = models.TextField()
-    age_range = models.TextField()
-    language = models.TextField()
-    sample_url = models.TextField()
-    accepted = models.TextField()
-    comment = models.TextField()
-
-    class Meta:
-        managed = True
-        db_table = 'workday'
-
-
 class Selection(models.Model):
     STATUS_CHOICES = (
         ("PREAPPROVED", "Pre_Approved"),
@@ -453,6 +225,10 @@ class Selection(models.Model):
 
     def __unicode__(self):
         return self.talent.welo_id + ": " + self.client.username
+
+    @property
+    def cache_key(self):
+        return '/%s/item-%s-%s' % (DATA_SCHEMA_REVISION, self.id, self.last_modified)
 
 
 class Comment(models.Model):

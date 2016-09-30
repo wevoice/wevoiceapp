@@ -2,13 +2,13 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from forms import LoginForm, SelectionForm, CommentForm, DeleteCommentForm
 from django.contrib.auth.models import User
-from models import Admin, Client, Talent, Vendor, Language, Selection, Comment, Main, Rating, UserProfile
+from models import Admin, Client, Talent, Vendor, Language, Selection, Comment, Rating, UserProfile
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
-from django.views.decorators.cache import cache_page
-from django.core.cache import cache
+# from django.views.decorators.cache import cache_page
+# from django.core.cache import cache
 import sys
 import os
 
@@ -102,9 +102,6 @@ def add_comment(request, client_name, pk):
 
 @login_required
 def for_approval(request, client_name, pk=None):
-    # foo = cache.get('foo')
-    # cache.set('foo', 'bar')
-    # foo, bar = cache.get('foo', 'bar')
     comment_form = None
     delete_comment_form = None
     if request.method == 'POST':
@@ -252,13 +249,11 @@ def updatedb(request):
     from legacy.models import Client as OldClients
     from legacy.models import Language as OldLanguages
     from legacy.models import Admin as OldAdmin
-    from legacy.models import Main as OldMain
     from legacy.models import Vendor as OldVendors
 
     Talent.objects.all().delete()
     Language.objects.all().delete()
     Admin.objects.all().delete()
-    Main.objects.all().delete()
     Vendor.objects.all().delete()
     UserProfile.objects.all().delete()
     User.objects.exclude(username=u'william.burton').delete()
@@ -281,18 +276,6 @@ def updatedb(request):
             name=oldvendor.name,
             username=oldvendor.username,
             password=oldvendor.password
-        )
-
-    for oldmain in OldMain.objects.all():
-        Main.objects.create(
-            talent=oldmain.talent,
-            client=oldmain.client,
-            gender=oldmain.gender,
-            age_range=oldmain.age_range,
-            language=oldmain.language,
-            sample_url=oldmain.sample_url,
-            accepted=oldmain.accepted,
-            comment=oldmain.comment
         )
 
     for oldlanguage in OldLanguages.objects.all():
