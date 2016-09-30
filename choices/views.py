@@ -7,6 +7,8 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 import sys
 import os
 
@@ -99,7 +101,11 @@ def add_comment(request, client_name, pk):
 
 
 @login_required
+@cache_page(60 * 15)
 def for_approval(request, client_name, pk=None):
+    # foo = cache.get('foo')
+    # cache.set('foo', 'bar')
+    # foo, bar = cache.get('foo', 'bar')
     comment_form = None
     delete_comment_form = None
     if request.method == 'POST':
@@ -144,6 +150,7 @@ def for_approval(request, client_name, pk=None):
 
 
 @login_required
+@cache_page(60 * 15)
 def accepted(request, client_name, pk=None):
     comment_form = None
     delete_comment_form = None
@@ -191,6 +198,7 @@ def accepted(request, client_name, pk=None):
 
 
 @login_required
+@cache_page(60 * 15)
 def rejected(request, client_name, pk=None):
     comment_form = None
     delete_comment_form = None
