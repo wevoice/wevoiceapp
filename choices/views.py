@@ -357,14 +357,6 @@ def updatedb(request):
             print_error(e)
             print(oldtalent.sample_url)
 
-        # try:
-        #     with open(os.path.join(settings.MEDIA_ROOT, oldtalent.sample_url.split('/')[1]), 'rb') as doc_file:
-        #         newtalent.audio_file.save('sample_' + newtalent.sample_url.split('/')[1], File(doc_file), save=True)
-        #         newtalent.save()
-        # except Exception as e:
-        #     print_error(e)
-        #     print(oldtalent.sample_url)
-
     for oldclient in OldClients.objects.all():
         process_client(oldclient, OldTalents)
 

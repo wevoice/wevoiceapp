@@ -62,7 +62,7 @@ class UserProfile(models.Model):
         return self.user.username
 
     class Meta:
-        ordering = ['user']
+        ordering = ['user__username']
 
 
 class Anheuserbusch(models.Model):

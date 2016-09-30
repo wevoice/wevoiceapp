@@ -1,3 +1,4 @@
+{% load tags %}
 {% if selection.comments.all %}
 <tr>
     <td class='comment_admin_table_header' >ID</td>
@@ -31,26 +32,24 @@
             {% csrf_token %}
             <table>
                 <tr>
-                    <td colspan='4' class='talent_comment_submit'>
+                    <td colspan='3' class='talent_comment_submit'>
                         Add Comment: {{ comment_form.text }}
                     </td>
-                    <td colspan='2' class='talent_comment_submit'>
-                        Update Rating: {{ comment_form.rating }}&nbsp;&nbsp;
-{#                        {% for radio in comment_form.rating %}#}
-{#                            <label>#}
-{#                                {{ radio.choice_label }}#}
-{#                                {%  for rating in selection.talent.rating_set.all %}#}
-{#                                    {% if user.userprofile.id ==  rating.rater.id %}#}
-{#                                        {% if rating.rating|stringformat:"i" == radio.choice_label %}#}
-{#                                            <span class="radio"><input id="id_rating_{{ forloop.counter0 }}" name="rating" type="radio" selected="selected" value="{{ forloop.counter }}"></span>#}
-{#                                            {% else %}#}
-{#                                            <span class="radio">{{ radio.tag }}</span>#}
-{#                                        {% endif %}#}
-{#                                    {% endif %}#}
-{#                                {% endfor %}#}
-{#                            </label>#}
-{#                        {% endfor %}#}
-                        <input type="submit" class='submitboxes05' value="submit">
+                    <td colspan='3' class='talent_comment_submit'>
+                        {% for rating in selection.talent.rating_set.all %}
+                            {% if rating.rater.id == user.userprofile.id %}
+                                Previous Rating:
+                                {% for i in 5|times %}
+                                    {% if forloop.counter0 < rating.rating %}
+                                        <span class="gold_star">☆</span>
+                                        {% else %}
+                                        <span>☆</span>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                        &nbsp;&nbsp;&nbsp;Update Rating: {{ comment_form.rating }}
+                        <input type="submit" value="submit">
                     </td>
                 </tr>
             </table>
