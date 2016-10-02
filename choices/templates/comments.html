@@ -13,9 +13,11 @@
     <td class='talent_comment_table'>{{ selection.talent.welo_id }}</td>
     <td class='talent_comment_table'>
         {% if comment.author.id == user.userprofile.id or user.is_superuser %}
-            <form method="POST" action="{% url 'delete_comment' client_name=client.username pk=selection.pk %}" >
+            <form method="POST" action="{% url 'delete_comment' %}" >
                 {% csrf_token %}
                 <input name='comment_id' type='hidden' value='{{ comment.id }}'>
+                <input name='selection_id' type='hidden' value='{{ selection.id }}'>
+                <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
                 <input id='delete_button' name='delete' type='submit' alt='delete' value=''>
             </form>
         {% endif %}
@@ -28,7 +30,7 @@
 {% endfor %}
 <tr>
     <td colspan='6' class='talent_comment_table' >
-        <form method="POST" action="{% url 'add_comment' client_name=client.username pk=selection.pk %}" >
+        <form method="POST" action="{% url 'add_comment' %}" >
             {% csrf_token %}
             <table>
                 <tr>
@@ -49,6 +51,8 @@
                             {% endif %}
                         {% endfor %}
                         &nbsp;&nbsp;&nbsp;Update Rating: {{ comment_form.rating }}
+                        <input name='selection_id' type='hidden' value='{{ selection.id }}'>
+                        <input name='client_id' type='hidden' value='{{ selection.client.id }}'>
                         <input type="submit" value="submit">
                     </td>
                 </tr>

@@ -71,7 +71,11 @@ class TalentAdmin(admin.ModelAdmin):
         return actions
 
     class Media:
-        js = ('js/admin/extra-admin.js',)
+        js = (
+            'jquery/jquery-1.4.min.js',
+            'jquery/jquery.simpleplayer.min.js',
+            'js/admin/extra-admin.js',
+        )
         css = {
              'all': ('css/admin/extra-admin.css',)
         }

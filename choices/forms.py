@@ -59,6 +59,8 @@ class CommentForm(forms.Form):
         max_length=512,
         widget=forms.TextInput(attrs={'class': "inputboxes03"})
     )
+    client_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
+    selection_id=forms.IntegerField(required=True, widget=forms.HiddenInput())
     rating = forms.ChoiceField(
         required=False,
         choices=CHOICES,
@@ -67,5 +69,7 @@ class CommentForm(forms.Form):
 
 class DeleteCommentForm(forms.Form):
     comment_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
+    client_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
+    selection_id=forms.IntegerField(required=True, widget=forms.HiddenInput())
 
 

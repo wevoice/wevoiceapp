@@ -7,8 +7,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
-# from django.views.decorators.cache import cache_page
-# from django.core.cache import cache
+from cache_utils import invalidate_template_fragment
 import sys
 import os
 
@@ -55,28 +54,30 @@ def index(request, client_name):
 
 
 @login_required
-def delete_comment(request, client_name, pk):
-    client = get_client(client_name)
-    selection = get_object_or_404(Selection, pk=pk)
+def delete_comment(request):
     if request.method == "POST":
         form = DeleteCommentForm(request.POST)
         if form.is_valid():
-            comment = Comment.objects.get(id=form.cleaned_data['comment_id'])
+            client = get_object_or_404(Client, pk=form.cleaned_data['client_id'])
+            comment = get_object_or_404(Comment, pk=form.cleaned_data['comment_id'])
+            selection = get_object_or_404(Selection, pk=form.cleaned_data['selection_id'])
             comment.delete()
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'), {
-            'selection': selection,
-            'client': client})
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'), {
+                'selection': selection,
+                'client': client})
+        else:
+            raise Http404("That page does not exist")
     else:
         raise Http404("That page does not exist")
 
 
 @login_required
-def add_comment(request, client_name, pk):
-    client = get_client(client_name)
-    selection = get_object_or_404(Selection, pk=pk)
+def add_comment(request):
     if request.method == "POST":
         form = CommentForm(request.POST)
         if form.is_valid():
+            client = get_object_or_404(Client, pk=form.cleaned_data['client_id'])
+            selection = get_object_or_404(Selection, pk=form.cleaned_data['selection_id'])
             if form.cleaned_data['text'] != '':
                 author = request.user.userprofile
                 comment_text = form.cleaned_data['text']
@@ -101,7 +102,7 @@ def add_comment(request, client_name, pk):
 
 
 @login_required
-def for_approval(request, client_name, pk=None):
+def selections(request, client_name, status, pk=None):
     comment_form = None
     delete_comment_form = None
     if request.method == 'POST':
@@ -116,66 +117,40 @@ def for_approval(request, client_name, pk=None):
             elif request.POST.get('submit') == 'REJECT':
                 talent_selection.status = 'REJECTED'
                 talent_selection.save()
-            else:
-                raise Http404()
-    else:
-        form = SelectionForm
-
-    client = get_client(client_name)
-    selections = Selection.objects.filter(client=client).filter(status='PREAPPROVED')
-    pro_selections = selections.filter(talent__type="PRO")
-    home_selections = selections.filter(talent__type="HR")
-    tts_selections = selections.filter(talent__type="TTS")
-
-    if pk:
-        pk = int(pk)
-        comment_form = CommentForm
-        delete_comment_form = DeleteCommentForm
-
-    return render(request, 'selections.html', {
-        'client': client,
-        'form': form,
-        'comment_form': comment_form,
-        'delete_comment_form': delete_comment_form,
-        'pro_selections': pro_selections,
-        'home_selections': home_selections,
-        'tts_selections': tts_selections,
-        'pk': pk,
-        'status': 'for_approval'
-    })
-
-
-@login_required
-def accepted(request, client_name, pk=None):
-    comment_form = None
-    delete_comment_form = None
-    if request.method == 'POST':
-        form = SelectionForm(request.POST)
-        if form.is_valid():
-            client = Client.objects.get(id=form.cleaned_data['client_id'])
-            talent = Talent.objects.get(id=form.cleaned_data['talent_id'])
-            talent_selection = Selection.objects.filter(client=client).filter(talent=talent)[0]
-            if request.POST.get('submit') == 'REJECT':
-                talent_selection.status = 'REJECTED'
-                talent_selection.save()
             elif request.POST.get('submit') == 'FOR APPROVAL':
                 talent_selection.status = 'PREAPPROVED'
                 talent_selection.save()
-            elif request.POST.get('submit') == 'ACCEPT':
-                pass
             else:
                 raise Http404()
     else:
         form = SelectionForm
 
-    client = get_client(client_name)
-    selections = Selection.objects.filter(client=client).filter(status='APPROVED')
-    pro_selections = selections.filter(talent__type="PRO")
-    home_selections = selections.filter(talent__type="HR")
-    tts_selections = selections.filter(talent__type="TTS")
+    status_filter_dict = {
+        'for_approval': 'PREAPPROVED',
+        'accepted': 'APPROVED',
+        'rejected': 'REJECTED'
+    }
 
-    if pk:
+    pro_selections, home_selections, tts_selections, status_filter = (None, None, None, None)
+    if status in ['for_approval', 'accepted', 'rejected']:
+        status_filter = status_filter_dict[status]
+    client = get_client(client_name)
+    # invalidate_template_fragment("client", client.cache_key)
+    all_selections = client.selection_set.filter(status=status_filter)
+
+    selection_types = []
+    for type_filter in ["PRO", "HR", "TTS"]:
+        currentselections = all_selections.filter(talent__type=type_filter)
+        if currentselections.exists():
+            selection_types.append({
+                'selections': currentselections,
+                'type': type_filter
+            })
+
+    if pk and int(pk) > 0:
         pk = int(pk)
+        selection = get_selection(pk)
+        invalidate_template_fragment("selection", selection.cache_key)
         comment_form = CommentForm
         delete_comment_form = DeleteCommentForm
 
@@ -184,58 +159,9 @@ def accepted(request, client_name, pk=None):
         'form': form,
         'comment_form': comment_form,
         'delete_comment_form': delete_comment_form,
-        'pro_selections': pro_selections,
-        'home_selections': home_selections,
-        'tts_selections': tts_selections,
         'pk': pk,
-        'status': 'accepted'
-    })
-
-
-@login_required
-def rejected(request, client_name, pk=None):
-    comment_form = None
-    delete_comment_form = None
-    if request.method == 'POST':
-        form = SelectionForm(request.POST)
-        if form.is_valid():
-            client = Client.objects.get(id=form.cleaned_data['client_id'])
-            talent = Talent.objects.get(id=form.cleaned_data['talent_id'])
-            talent_selection = Selection.objects.filter(client=client).filter(talent=talent)[0]
-            if request.POST.get('submit') == 'REJECT':
-                pass
-            elif request.POST.get('submit') == 'FOR APPROVAL':
-                talent_selection.status = 'PREAPPROVED'
-                talent_selection.save()
-            elif request.POST.get('submit') == 'ACCEPT':
-                talent_selection.status = 'APPROVED'
-                talent_selection.save()
-            else:
-                raise Http404()
-    else:
-        form = SelectionForm
-
-    if pk:
-        pk = int(pk)
-        comment_form = CommentForm
-        delete_comment_form = DeleteCommentForm
-
-    client = get_client(client_name)
-    selections = Selection.objects.filter(client=client).filter(status='REJECTED')
-    pro_selections = selections.filter(talent__type="PRO")
-    home_selections = selections.filter(talent__type="HR")
-    tts_selections = selections.filter(talent__type="TTS")
-
-    return render(request, 'selections.html', {
-        'client': client,
-        'form': form,
-        'comment_form': comment_form,
-        'delete_comment_form': delete_comment_form,
-        'pro_selections': pro_selections,
-        'home_selections': home_selections,
-        'tts_selections': tts_selections,
-        'pk': pk,
-        'status': 'rejected'
+        'status': status,
+        'selection_types': selection_types
     })
 
 
@@ -469,6 +395,14 @@ def get_client(client_name):
     except Client.DoesNotExist:
         raise Http404("That client does not exist")
     return client
+
+
+def get_selection(pk):
+    try:
+        selection = Selection.objects.get(pk=pk)
+    except Selection.DoesNotExist:
+        raise Http404("That selection does not exist")
+    return selection
 
 
 def print_error(e):

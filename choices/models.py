@@ -10,9 +10,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.conf import settings
+from datetime import datetime
 
-
-DATA_SCHEMA_REVISION = 1
+DATA_SCHEMA_REVISION = 2
 
 
 class Admin(models.Model):
@@ -22,6 +22,29 @@ class Admin(models.Model):
     class Meta:
         managed = True
         db_table = 'admin'
+
+
+class Client(models.Model):
+    name = models.TextField()
+    username = models.TextField()
+    password = models.TextField()
+    last_modified = models.DateTimeField(null=True, editable=False)
+
+    @property
+    def cache_key(self):
+        return 'wevoice/%s/client-%s-%s' % (DATA_SCHEMA_REVISION, self.id, self.last_modified)
+
+    def save(self, *args, **kwargs):
+        self.last_modified = datetime.now()
+        super(Client, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        managed = True
+        db_table = 'client'
+        ordering = ['name']
 
 
 class UserProfile(models.Model):
@@ -66,20 +89,6 @@ class UserProfile(models.Model):
 
     class Meta:
         ordering = ['user__username']
-
-
-class Client(models.Model):
-    name = models.TextField()
-    username = models.TextField()
-    password = models.TextField()
-
-    def __unicode__(self):
-        return self.name
-
-    class Meta:
-        managed = True
-        db_table = 'client'
-        ordering = ['name']
 
 
 class Language(models.Model):
@@ -190,6 +199,7 @@ class Selection(models.Model):
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="PREAPPROVED")
     talent = models.ForeignKey(Talent)
     client = models.ForeignKey(Client)
+    last_modified = models.DateTimeField(null=True, editable=False)
 
     def talent_language(self):
         return self.talent.language
@@ -228,7 +238,15 @@ class Selection(models.Model):
 
     @property
     def cache_key(self):
-        return '/%s/item-%s-%s' % (DATA_SCHEMA_REVISION, self.id, self.last_modified)
+        return 'wevoice/%s/selection-%s-%s' % (DATA_SCHEMA_REVISION, self.id, self.last_modified)
+
+    def save(self, *args, **kwargs):
+        from datetime import datetime
+        self.last_modified = datetime.now()
+        client = self.client
+        client.last_modified = datetime.now()
+        client.save()
+        super(Selection, self).save(*args, **kwargs)
 
 
 class Comment(models.Model):
