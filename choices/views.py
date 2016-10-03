@@ -7,7 +7,9 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
-from cache_utils import invalidate_template_fragment
+from django.core.cache import cache
+from . import cache_utils
+from datetime import datetime
 import sys
 import os
 
@@ -101,10 +103,37 @@ def add_comment(request):
         return Http404("That page does not exist")
 
 
+def get_selections(client, status):
+    status_filter_dict = {
+        'for_approval': 'PREAPPROVED',
+        'accepted': 'APPROVED',
+        'rejected': 'REJECTED'
+    }
+    status_filter = None
+    if status in ['for_approval', 'accepted', 'rejected']:
+        status_filter = status_filter_dict[status]
+    all_selections = client.selection_set.filter(status=status_filter)
+    selection_types = []
+    for type_filter in ["PRO", "HR", "TTS"]:
+        currentselections = all_selections.filter(talent__type=type_filter)
+        if currentselections.exists():
+            selection_types.append({
+                'selections': currentselections,
+                'type': type_filter
+            })
+    return selection_types
+
+
+def get_selection_from_cache(status, selection):
+    oldkey = cache_utils.get_template_fragment_cache_key('selection_item', status, selection.id)
+    oldkey.delete()
+    newkey = cache_utils.get_template_fragment_cache_key('selection_item', status, selection.id)
+    pass
+
+
 @login_required
 def selections(request, client_name, status, pk=None):
-    comment_form = None
-    delete_comment_form = None
+    comment_form, delete_comment_form, selection_types = (None, None, None)
     if request.method == 'POST':
         form = SelectionForm(request.POST)
         if form.is_valid():
@@ -125,32 +154,29 @@ def selections(request, client_name, status, pk=None):
     else:
         form = SelectionForm
 
-    status_filter_dict = {
-        'for_approval': 'PREAPPROVED',
-        'accepted': 'APPROVED',
-        'rejected': 'REJECTED'
-    }
-
-    pro_selections, home_selections, tts_selections, status_filter = (None, None, None, None)
-    if status in ['for_approval', 'accepted', 'rejected']:
-        status_filter = status_filter_dict[status]
     client = get_client(client_name)
-    # invalidate_template_fragment("client", client.cache_key)
-    all_selections = client.selection_set.filter(status=status_filter)
+    # cache_utils.invalidate_template_fragment("client", client.cache_key)
+    # cache_key = cache_utils.get_template_fragment_cache_key('selections_tab', status, client.cache_key)
+    # content = cache.get(cache_key)
 
-    selection_types = []
-    for type_filter in ["PRO", "HR", "TTS"]:
-        currentselections = all_selections.filter(talent__type=type_filter)
-        if currentselections.exists():
-            selection_types.append({
-                'selections': currentselections,
-                'type': type_filter
-            })
+    key = "%s_%s_%s" % ('selections_tab', status, str(client.id))
+    if key not in cache:
+        cache_utils.set_template_fragment_timestamp("selections_tab", status, client)
+        selection_types = get_selections(client, status)
+    else:
+        template_fragment_timestamp = cache_utils.get_template_fragment_timestamp("selections_tab", status, client)
+        if template_fragment_timestamp == client.last_modified:
+            pass
+        else:
+            cache_utils.set_template_fragment_timestamp("selections_tab", status, client)
+            selection_types = get_selections(client, status)
 
     if pk and int(pk) > 0:
         pk = int(pk)
         selection = get_selection(pk)
-        invalidate_template_fragment("selection", selection.cache_key)
+        selection.last_modified = datetime.now()
+        selection.save()
+        # invalidate_template_fragment("selection_item", status, client.id, selection.cache_key)
         comment_form = CommentForm
         delete_comment_form = DeleteCommentForm
 
