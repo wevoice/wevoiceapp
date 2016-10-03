@@ -8,7 +8,10 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 SECRET_KEY = 'i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+if os.environ.get('LOCAL_MACHINE'):
+    DEBUG = True
+else:
+    DEBUG = False
 
 # Application definition
 INSTALLED_APPS = (
@@ -154,12 +157,11 @@ else:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-       }
+        }
     }
 
 
 # Debug Toolbar settings
 INTERNAL_IPS = ['127.0.0.1', ]
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
-
 

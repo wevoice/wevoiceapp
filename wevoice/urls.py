@@ -21,4 +21,4 @@ else:
 # for serving static files in development with DEBUG = False
 if not settings.DEBUG and os.environ.get('LOCAL_MACHINE'):
     urlpatterns += [url(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT, }),
-g                    url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}), ]
+                    url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}), ]
