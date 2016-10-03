@@ -1,12 +1,12 @@
+import os
 from django.conf.urls import include, url
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static, serve
-import debug_toolbar
 admin.autodiscover()
-import os
 
 if settings.DEBUG:
+    import debug_toolbar
     urlpatterns = [
         url(r'^admin/', include(admin.site.urls)),
         url(r'^__debug__/', include(debug_toolbar.urls)),
