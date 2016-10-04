@@ -2,8 +2,7 @@ wevoiceenv
 .idea
 .DS_Store
 *.pyc
-static
+/static
 media
 .env
-db.sqlite3
 db
