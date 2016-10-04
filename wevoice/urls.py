@@ -17,9 +17,8 @@ else:
         url(r'^admin/', include(admin.site.urls)),
         url(r'^', include('choices.urls'))
     ]
-    # ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # for serving static files in development with DEBUG = False
-if not settings.DEBUG and os.environ.get('LOCAL_MACHINE'):
+if os.environ.get('LOCAL_MACHINE') and not settings.DEBUG:
     urlpatterns += [url(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT, }),
                     url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}), ]

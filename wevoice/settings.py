@@ -143,7 +143,6 @@ if RUN_CACHE:
         }
     }
 
-
 # Debug Toolbar settings
 INTERNAL_IPS = ['127.0.0.1', ]
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
