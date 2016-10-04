@@ -133,30 +133,13 @@ DATABASE_ROUTERS = ['legacy.router.LegacyRouter']
 
 # Memcached settings
 
-DAEMON_CACHE = False
-MANUAL_CACHE = True
+RUN_CACHE = False
 
-
-if os.environ.get('LOCAL_MACHINE') is None or MANUAL_CACHE:
+if RUN_CACHE:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
             'LOCATION': '127.0.0.1:11211',
-        }
-    }
-elif DAEMON_CACHE:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-            'LOCATION': 'unix:/Users/william.burton/memcached.sock',
-        },
-    }
-    SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-    CACHE_MIDDLEWARE_KEY_PREFIX = 'wevoice_'
-else:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
         }
     }
 

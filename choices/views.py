@@ -7,9 +7,9 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
-from django.core.cache import cache
-from . import cache_utils
 from datetime import datetime
+# from django.core.cache import cache
+from . import cache_utils
 import sys
 import os
 
@@ -127,7 +127,6 @@ def get_selections(client, status):
 def get_selection_from_cache(status, selection):
     oldkey = cache_utils.get_template_fragment_cache_key('selection_item', status, selection.id)
     oldkey.delete()
-    newkey = cache_utils.get_template_fragment_cache_key('selection_item', status, selection.id)
     pass
 
 
@@ -155,28 +154,25 @@ def selections(request, client_name, status, pk=None):
         form = SelectionForm
 
     client = get_client(client_name)
-    # cache_utils.invalidate_template_fragment("client", client.cache_key)
-    # cache_key = cache_utils.get_template_fragment_cache_key('selections_tab', status, client.cache_key)
-    # content = cache.get(cache_key)
+    selection_types = get_selections(client, status)
 
-    key = "%s_%s_%s" % ('selections_tab', status, str(client.id))
-    if key not in cache:
-        cache_utils.set_template_fragment_timestamp("selections_tab", status, client)
-        selection_types = get_selections(client, status)
-    else:
-        template_fragment_timestamp = cache_utils.get_template_fragment_timestamp("selections_tab", status, client)
-        if template_fragment_timestamp == client.last_modified:
-            pass
-        else:
-            cache_utils.set_template_fragment_timestamp("selections_tab", status, client)
-            selection_types = get_selections(client, status)
+    # key = "%s_%s_%s" % ('selections_tab', status, str(client.id))
+    # if key not in cache:
+    #     cache_utils.set_template_fragment_timestamp("selections_tab", status, client)
+    #     selection_types = get_selections(client, status)
+    # else:
+    #     template_fragment_timestamp = cache_utils.get_template_fragment_timestamp("selections_tab", status, client)
+    #     if template_fragment_timestamp == client.last_modified:
+    #         pass
+    #     else:
+    #         cache_utils.set_template_fragment_timestamp("selections_tab", status, client)
+    #         selection_types = get_selections(client, status)
 
     if pk and int(pk) > 0:
         pk = int(pk)
         selection = get_selection(pk)
         selection.last_modified = datetime.now()
         selection.save()
-        # invalidate_template_fragment("selection_item", status, client.id, selection.cache_key)
         comment_form = CommentForm
         delete_comment_form = DeleteCommentForm
 
