@@ -16,7 +16,8 @@ else:
     urlpatterns = [
         url(r'^admin/', include(admin.site.urls)),
         url(r'^', include('choices.urls'))
-    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    ]
+    # ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # for serving static files in development with DEBUG = False
 if not settings.DEBUG and os.environ.get('LOCAL_MACHINE'):
