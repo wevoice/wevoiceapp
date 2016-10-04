@@ -3,6 +3,7 @@
 {% load cache %}
 {% load tags %}
 
+$(window).on("load", function() {
 {% block main %}
 {#    {% cache 9999999 selections_tab status client.cache_key %}#}
     {% for dict in selection_types %}
@@ -90,3 +91,4 @@
     {% endfor %}
 {#    {% endcache %}#}
 {% endblock main %}
+});
