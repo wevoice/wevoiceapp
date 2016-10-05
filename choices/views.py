@@ -8,8 +8,6 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from datetime import datetime
-# from django.core.cache import cache
-from . import cache_utils
 import sys
 import os
 
@@ -124,12 +122,6 @@ def get_selections(client, status):
     return selection_types
 
 
-def get_selection_from_cache(status, selection):
-    oldkey = cache_utils.get_template_fragment_cache_key('selection_item', status, selection.id)
-    oldkey.delete()
-    pass
-
-
 @login_required
 def selections(request, client_name, status, pk=None):
     comment_form, delete_comment_form, selection_types = (None, None, None)
@@ -155,18 +147,6 @@ def selections(request, client_name, status, pk=None):
 
     client = get_client(client_name)
     selection_types = get_selections(client, status)
-
-    # key = "%s_%s_%s" % ('selections_tab', status, str(client.id))
-    # if key not in cache:
-    #     cache_utils.set_template_fragment_timestamp("selections_tab", status, client)
-    #     selection_types = get_selections(client, status)
-    # else:
-    #     template_fragment_timestamp = cache_utils.get_template_fragment_timestamp("selections_tab", status, client)
-    #     if template_fragment_timestamp == client.last_modified:
-    #         pass
-    #     else:
-    #         cache_utils.set_template_fragment_timestamp("selections_tab", status, client)
-    #         selection_types = get_selections(client, status)
 
     if pk and int(pk) > 0:
         pk = int(pk)

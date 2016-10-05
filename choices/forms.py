@@ -19,9 +19,9 @@ class LoginForm(forms.Form):
     def clean_username(self):
         try:
             username = User.objects.get(username=self.cleaned_data['username'])
+            return username
         except User.DoesNotExist:
             raise forms.ValidationError(self.fields['username'].error_messages['invalid'])
-        return self.cleaned_data['username']
 
     def clean_password(self):
         cleaned_data = super(LoginForm, self).clean()
@@ -60,7 +60,7 @@ class CommentForm(forms.Form):
         widget=forms.TextInput(attrs={'class': "inputboxes03"})
     )
     client_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
-    selection_id=forms.IntegerField(required=True, widget=forms.HiddenInput())
+    selection_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
     rating = forms.ChoiceField(
         required=False,
         choices=CHOICES,
@@ -70,6 +70,4 @@ class CommentForm(forms.Form):
 class DeleteCommentForm(forms.Form):
     comment_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
     client_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
-    selection_id=forms.IntegerField(required=True, widget=forms.HiddenInput())
-
-
+    selection_id = forms.IntegerField(required=True, widget=forms.HiddenInput())

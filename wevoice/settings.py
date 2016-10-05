@@ -9,7 +9,7 @@ SECRET_KEY = 'i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if os.environ.get('LOCAL_MACHINE'):
-    DEBUG = False
+    DEBUG = True
 else:
     DEBUG = False
 
@@ -146,4 +146,3 @@ if RUN_CACHE:
 # Debug Toolbar settings
 INTERNAL_IPS = ['127.0.0.1', ]
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
-
