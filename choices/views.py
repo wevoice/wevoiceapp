@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from models import Admin, Client, Talent, Vendor, Language, Selection, Comment, Rating, UserProfile
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from datetime import datetime
@@ -190,9 +191,11 @@ def updatedb(request):
 
     superclient = Client.objects.create(
         name="Welocalize",
-        username="localize",
-        password="Welo!"
+        username="welocalize"
     )
+
+    superclient.password = make_password("Welo!")
+    superclient.save()
 
     UserProfile.objects.create(
         user=User.objects.get(username='william.burton'),
@@ -221,13 +224,13 @@ def updatedb(request):
         # The old Talent fields will be used as the new Talent fields.
         vendor, created = Vendor.objects.get_or_create(name=oldtalent.vendor_name)
         language, created = Language.objects.get_or_create(language=oldtalent.language)
-        age_range = 3
+        age_range = "26-45"
         if oldtalent.age_range == "16-25":
-            age_range = 2
+            age_range = "16-25"
         elif oldtalent.age_range == "26-45":
-            age_range = 3
+            age_range = "26-45"
         elif oldtalent.age_range == "46-75":
-            age_range = 4
+            age_range = "46-75"
 
         try:
             newtalent = Talent.objects.create(
@@ -273,7 +276,7 @@ def updatedb(request):
             print_error(e)
             print(oldtalent.sample_url)
 
-    for oldclient in OldClients.objects.all():
+    for oldclient in OldClients.objects.filter(username="kornferry"):
         process_client(oldclient, OldTalents)
 
     return HttpResponse("All done!")
@@ -338,9 +341,10 @@ def create_client_objects(oldclient):
         newuser = User.objects.get_or_create(
             first_name=oldclient.name,
             last_name="Admin",
-            username=oldclient.username,
-            password=oldclient.password
+            username=oldclient.username
         )
+        newuser[0].password = oldclient.password
+        newuser[0].save()
         UserProfile.objects.get_or_create(
             user=newuser[0],
             client=newclient
@@ -356,39 +360,30 @@ def process_talent_types(status, oldclient, oldtalents, newclient, process_funct
     except Exception as e:
         print_error(e)
     else:
-        process_type(protalents, newclient, status, talenttype="protalents")
-        process_type(hometalents, newclient, status, talenttype="hometalents")
-        process_type(ttstalents, newclient, status, talenttype="ttstalents")
+        process_type(protalents, newclient, status)
+        process_type(hometalents, newclient, status)
+        process_type(ttstalents, newclient, status)
 
 
-def process_type(talent_type, newclient, status, talenttype=None):
-    try:
-        talent_type[0]
-    except Exception as e:
-        print_error(e)
-        if hasattr(newclient, "username"):
-            print(newclient.username + ": " + status + ": " + talenttype)
-        else:
-            print(str(newclient))
-    else:
-        for talent_old in talent_type:
-            try:
-                talent = None
-                if hasattr(talent_old, 'welo_id'):
-                    talent = Talent.objects.get(welo_id=talent_old.welo_id)
-                elif hasattr(talent_old, 'talent'):
-                    talent = Talent.objects.get(welo_id=talent_old.talent)
-                if newclient:
-                    Selection.objects.get_or_create(talent=talent, client=newclient, status=status)
-                else:
-                    print("No newclient found")
-            except Exception as e:
-                if hasattr(talent_old, 'welo_id'):
-                    print_error(e)
-                    print("welo_id: " + talent_old.welo_id + "client: " + newclient.username)
-                elif hasattr(talent_old, 'talent'):
-                    print_error(e)
-                    print("talent: " + talent_old.talent + "client: " + newclient.username)
+def process_type(talent_type, newclient, status):
+    for talent_old in talent_type:
+        try:
+            talent = None
+            if hasattr(talent_old, 'welo_id'):
+                talent = Talent.objects.get(welo_id=talent_old.welo_id)
+            elif hasattr(talent_old, 'talent'):
+                talent = Talent.objects.get(welo_id=talent_old.talent)
+            if newclient:
+                Selection.objects.get_or_create(talent=talent, client=newclient, status=status)
+            else:
+                print("No newclient found")
+        except Exception as e:
+            if hasattr(talent_old, 'welo_id'):
+                print_error(e)
+                print("welo_id: " + talent_old.welo_id + "client: " + newclient.username)
+            elif hasattr(talent_old, 'talent'):
+                print_error(e)
+                print("talent: " + talent_old.talent + "client: " + newclient.username)
 
 
 def get_client(client_name):

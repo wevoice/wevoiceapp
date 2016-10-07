@@ -28,11 +28,6 @@ class Client(models.Model):
     name = models.TextField()
     username = models.TextField()
     password = models.TextField()
-    last_modified = models.DateTimeField(null=True, editable=False)
-
-    @property
-    def cache_key(self):
-        return 'wevoice/%s/client-%s-%s' % (DATA_SCHEMA_REVISION, self.id, self.last_modified)
 
     def save(self, *args, **kwargs):
         self.last_modified = datetime.now()
@@ -126,11 +121,11 @@ class Talent(models.Model):
     )
 
     AGE_RANGE = (
-        ('1', "1-15"),
-        ('2', "16-25"),
-        ('3', "26-45"),
-        ('4', "46-75"),
-        ('5', "75 +")
+        ("1-15", "1-15"),
+        ("16-25", "16-25"),
+        ("26-45", "26-45"),
+        ("46-75", "46-75"),
+        ("75 +", "75 +")
     )
 
     type = models.CharField(max_length=16, choices=TYPE_CHOICES, default="PR0", blank=True, null=True)
@@ -164,7 +159,6 @@ class Talent(models.Model):
     average_rating.short_description = "Rating"
 
     comment = models.TextField(null=True, blank=True)
-    allclients = models.TextField(blank=True, null=True)
     rate = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
@@ -199,7 +193,6 @@ class Selection(models.Model):
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="PREAPPROVED")
     talent = models.ForeignKey(Talent)
     client = models.ForeignKey(Client)
-    last_modified = models.DateTimeField(null=True, editable=False)
 
     def talent_language(self):
         return self.talent.language

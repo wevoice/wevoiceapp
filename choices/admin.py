@@ -23,6 +23,7 @@ class ClientAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'name')
     search_fields = ('name', 'username')
     list_per_page = 100
+    readonly_fields = ('password',)
 admin.site.register(models.Client, ClientAdmin)
 
 
@@ -60,9 +61,10 @@ class TalentAdmin(admin.ModelAdmin):
         dbmodels.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols': 50})},
     }
     list_filter = ('gender', 'type', 'age_range', 'vendor', 'language')
-    list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'old_talent_id')
+    list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range')
     list_display_links = ('id', 'welo_id')
-    search_fields = ('welo_id', 'vendor__name', 'language', 'old_talent_id')
+    readonly_fields = ('old_talent_id', 'times_rated', 'total_rating', 'comment', 'rate')
+    search_fields = ('welo_id', 'vendor__name', 'language')
     list_per_page = 100
 
     def get_actions(self, request):

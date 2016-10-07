@@ -146,3 +146,8 @@ if RUN_CACHE:
 # Debug Toolbar settings
 INTERNAL_IPS = ['127.0.0.1', ]
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
+
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.UnsaltedMD5PasswordHasher',
+]
