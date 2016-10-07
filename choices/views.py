@@ -276,7 +276,7 @@ def updatedb(request):
             print_error(e)
             print(oldtalent.sample_url)
 
-    for oldclient in OldClients.objects.filter(username="kornferry"):
+    for oldclient in OldClients.objects.all():
         process_client(oldclient, OldTalents)
 
     return HttpResponse("All done!")
@@ -289,7 +289,12 @@ def process_client(oldclient, oldtalents):
     try:
         oldtalents.objects.raw("SELECT * FROM talent WHERE %s='y'" % oldclient.username)[0]
     except Exception as e:
-        print_error(e)
+        if IndexError:
+            pass
+        else:
+            print_error(e)
+            if oldclient:
+                print(oldclient.username + ": " + "REJECTED")
     else:
         process_talent_types(
             status="PREAPPROVED",
@@ -302,9 +307,12 @@ def process_client(oldclient, oldtalents):
         try:
             oldtalents.objects.raw("SELECT * FROM %s" % oldclient.username)[0]
         except Exception as e:
-            print_error(e)
-            if oldclient:
-                print(oldclient.username + ": " + "APPROVED")
+            if IndexError:
+                pass
+            else:
+                print_error(e)
+                if oldclient:
+                    print(oldclient.username + ": " + "REJECTED")
         else:
             process_talent_types(
                 status="APPROVED",
@@ -316,9 +324,12 @@ def process_client(oldclient, oldtalents):
         try:
             oldtalents.objects.raw("SELECT * FROM %s" % oldclient.username)[0]
         except Exception as e:
-            print_error(e)
-            if oldclient:
-                print(oldclient.username + ": " + "REJECTED")
+            if IndexError:
+                pass
+            else:
+                print_error(e)
+                if oldclient:
+                    print(oldclient.username + ": " + "REJECTED")
         else:
             process_talent_types(
                 status="REJECTED",
