@@ -272,7 +272,6 @@ def updatedb(request):
             print(oldtalent.sample_url)
 
     for oldclient in OldClients.objects.all():
-    # for oldclient in OldClients.objects.filter(username="kornferry"):
         process_client(oldclient, OldTalents)
 
     return HttpResponse("All done!")
@@ -374,16 +373,24 @@ def process_type(talent_type, newclient, status, type_of_talent):
             elif hasattr(talent_old, 'talent'):
                 talent = Talent.objects.get(welo_id=talent_old.talent)
             if newclient:
-                print("%s: %s: %s" %(type_of_talent, status, talent.welo_id))
-                new_selection = Selection.objects.get_or_create(talent=talent, client=newclient, status=status)
-                if new_selection:
-                    if talent_old.comment != '':
-                        new_comment = Comment(
-                            selection=new_selection[0],
-                            author=UserProfile.objects.get(user=User.objects.get(username=newclient.username)),
-                            text=talent_old.comment
-                        )
-                        new_comment.save()
+                new_selection, created = Selection.objects.get_or_create(talent=talent, client=newclient)
+                if not created:
+                    print("%s: %s: %s: %s" % (newclient.name, type_of_talent, status, talent.welo_id))
+                    new_selection.status = status
+                    new_selection.save()
+                else:
+                    new_selection.status = status
+                    new_selection.save()
+
+                # if new_selection:
+                #     if talent_old.comment != '':
+                #         new_comment = Comment(
+                #             selection=new_selection[0],
+                #             author=UserProfile.objects.get(user=User.objects.get(username=newclient.username)),
+                #             text=talent_old.comment
+                #         )
+                #         new_comment.save()
+
             else:
                 print("No newclient found")
         except Exception as e:
