@@ -64,7 +64,7 @@ class TalentAdmin(admin.ModelAdmin):
     list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range')
     list_display_links = ('id', 'welo_id')
     readonly_fields = ('old_talent_id', 'times_rated', 'total_rating', 'comment', 'rate')
-    search_fields = ('welo_id', 'vendor__name', 'language')
+    search_fields = ('welo_id', 'vendor__name', 'language__language')
     list_per_page = 100
 
     def get_actions(self, request):

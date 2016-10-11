@@ -271,8 +271,8 @@ def updatedb(request):
             print_error(e)
             print(oldtalent.sample_url)
 
-    # for oldclient in OldClients.objects.all():
-    for oldclient in OldClients.objects.filter(username="kornferry"):
+    for oldclient in OldClients.objects.all():
+    # for oldclient in OldClients.objects.filter(username="kornferry"):
         process_client(oldclient, OldTalents)
 
     return HttpResponse("All done!")
