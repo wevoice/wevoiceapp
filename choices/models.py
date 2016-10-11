@@ -28,6 +28,7 @@ class Client(models.Model):
     name = models.TextField()
     username = models.TextField()
     password = models.TextField()
+    logo = models.FileField(blank=True, null=True, upload_to='client_logos')
 
     def save(self, *args, **kwargs):
         self.last_modified = datetime.now()
@@ -243,7 +244,7 @@ class Selection(models.Model):
 
 
 class Comment(models.Model):
-    post = models.ForeignKey(Selection, related_name='comments')
+    selection = models.ForeignKey(Selection, related_name='comments')
     author = models.ForeignKey(UserProfile)
     text = models.TextField()
     created_date = models.DateTimeField(default=timezone.now)

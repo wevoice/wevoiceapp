@@ -113,8 +113,8 @@ admin.site.register(models.Selection, SelectionAdmin)
 
 
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('post', 'author', 'text', 'created_date')
-    search_fields = ['post']
+    list_display = ('selection', 'author', 'text', 'created_date')
+    search_fields = ['selection']
 admin.site.register(models.Comment, CommentAdmin)
 
 

@@ -41,7 +41,11 @@
                                 <p>&nbsp;</p>
                                 <p>&nbsp;</p>
                                 <p>&nbsp;</p>
-                                <div style="text-align:center; font-size:30px; font-weight:bold"><img src="{% static "logo_h45.png" %}" alt=""/><br/><br/>welcome to <span style="color:#DD4F05">we</span>voice</div><br/>
+                                {% if client.logo %}
+                                    <div style="text-align:center; font-size:30px; font-weight:bold"><img src="{{ client.logo.url }}" alt=""/><br/><br/>welcome to <span style="color:#DD4F05">we</span>voice</div><br/>
+                                {% else %}
+                                    <div style="text-align:center; font-size:30px; font-weight:bold"><img src="{% static "logo_h45.png" %}" alt=""/><br/><br/>welcome to <span style="color:#DD4F05">we</span>voice</div><br/>
+                                {% endif %}
                                 <p>&nbsp;</p>
                                 <p>&nbsp;</p>
                                 <p>&nbsp;</p>

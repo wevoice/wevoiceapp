@@ -2,7 +2,7 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from forms import LoginForm, SelectionForm, CommentForm, DeleteCommentForm
 from django.contrib.auth.models import User
-from models import Admin, Client, Talent, Vendor, Language, Selection, Comment, Rating, UserProfile
+from models import Client, Talent, Vendor, Language, Selection, Comment, Rating, UserProfile
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import make_password
@@ -82,7 +82,7 @@ def add_comment(request):
             if form.cleaned_data['text'] != '':
                 author = request.user.userprofile
                 comment_text = form.cleaned_data['text']
-                comment = Comment(author=author, text=comment_text, post=selection)
+                comment = Comment(author=author, text=comment_text, selection=selection)
                 comment.save()
             if form.cleaned_data['rating'] != '':
                 Rating.objects.update_or_create(
@@ -167,12 +167,7 @@ def selections(request, client_name, status, pk=None):
         'selection_types': selection_types
     })
 
-
-class BreakIt(Exception):
-    pass
-
-
-@login_required
+# @login_required
 def updatedb(request):
     from legacy.models import Talent as OldTalents
     from legacy.models import Client as OldClients
@@ -180,14 +175,7 @@ def updatedb(request):
     from legacy.models import Admin as OldAdmin
     from legacy.models import Vendor as OldVendors
 
-    Talent.objects.all().delete()
-    Language.objects.all().delete()
-    Admin.objects.all().delete()
-    Vendor.objects.all().delete()
-    UserProfile.objects.all().delete()
-    User.objects.exclude(username=u'william.burton').delete()
-    Client.objects.all().delete()
-    Selection.objects.all().delete()
+    User.objects.create_superuser('william.burton', 'william.burton@welocalize.com', 'L0cal!ze1')
 
     superclient = Client.objects.create(
         name="Welocalize",
@@ -202,6 +190,19 @@ def updatedb(request):
         client=superclient
     )
 
+    for oldadmin in OldAdmin.objects.all():
+        new_superuser = User.objects.create_superuser(
+            oldadmin.username,
+            '',
+            oldadmin.password
+        )
+        new_superuser.save()
+        new_userprofile = UserProfile.objects.create(
+            user=new_superuser,
+            client=superclient
+        )
+        new_userprofile.save()
+
     for oldvendor in OldVendors.objects.all():
         Vendor.objects.create(
             name=oldvendor.name,
@@ -212,12 +213,6 @@ def updatedb(request):
     for oldlanguage in OldLanguages.objects.all():
         Language.objects.create(
             language=oldlanguage.language
-        )
-
-    for oldadmin in OldAdmin.objects.all():
-        Admin.objects.create(
-            username=oldadmin.username,
-            password=oldadmin.password
         )
 
     for oldtalent in OldTalents.objects.all():
@@ -276,7 +271,8 @@ def updatedb(request):
             print_error(e)
             print(oldtalent.sample_url)
 
-    for oldclient in OldClients.objects.all():
+    # for oldclient in OldClients.objects.all():
+    for oldclient in OldClients.objects.filter(username="kornferry"):
         process_client(oldclient, OldTalents)
 
     return HttpResponse("All done!")
@@ -289,12 +285,9 @@ def process_client(oldclient, oldtalents):
     try:
         oldtalents.objects.raw("SELECT * FROM talent WHERE %s='y'" % oldclient.username)[0]
     except Exception as e:
-        if IndexError:
-            pass
-        else:
-            print_error(e)
-            if oldclient:
-                print(oldclient.username + ": " + "REJECTED")
+        print_error(e)
+        if oldclient:
+            print(oldclient.username + ": " + "PREAPPROVED")
     else:
         process_talent_types(
             status="PREAPPROVED",
@@ -307,12 +300,9 @@ def process_client(oldclient, oldtalents):
         try:
             oldtalents.objects.raw("SELECT * FROM %s" % oldclient.username)[0]
         except Exception as e:
-            if IndexError:
-                pass
-            else:
-                print_error(e)
-                if oldclient:
-                    print(oldclient.username + ": " + "REJECTED")
+            print_error(e)
+            if oldclient:
+                print(oldclient.username + ": " + "ACCEPTED")
         else:
             process_talent_types(
                 status="APPROVED",
@@ -342,12 +332,11 @@ def process_client(oldclient, oldtalents):
 
 def create_client_objects(oldclient):
     try:
-        if oldclient.username == "demo_client":
-            print("test")
         newclient = Client.objects.create(
             name=oldclient.name,
             username=oldclient.username,
-            password=oldclient.password
+            password=oldclient.password,
+            logo="client_logos/%slogo.png" % oldclient.username
         )
         newuser = User.objects.get_or_create(
             first_name=oldclient.name,
@@ -371,12 +360,12 @@ def process_talent_types(status, oldclient, oldtalents, newclient, process_funct
     except Exception as e:
         print_error(e)
     else:
-        process_type(protalents, newclient, status)
-        process_type(hometalents, newclient, status)
-        process_type(ttstalents, newclient, status)
+        process_type(protalents, newclient, status, "protalents")
+        process_type(hometalents, newclient, status, "hometalents")
+        process_type(ttstalents, newclient, status, "ttstalents")
 
 
-def process_type(talent_type, newclient, status):
+def process_type(talent_type, newclient, status, type_of_talent):
     for talent_old in talent_type:
         try:
             talent = None
@@ -385,7 +374,16 @@ def process_type(talent_type, newclient, status):
             elif hasattr(talent_old, 'talent'):
                 talent = Talent.objects.get(welo_id=talent_old.talent)
             if newclient:
-                Selection.objects.get_or_create(talent=talent, client=newclient, status=status)
+                print("%s: %s: %s" %(type_of_talent, status, talent.welo_id))
+                new_selection = Selection.objects.get_or_create(talent=talent, client=newclient, status=status)
+                if new_selection:
+                    if talent_old.comment != '':
+                        new_comment = Comment(
+                            selection=new_selection[0],
+                            author=UserProfile.objects.get(user=User.objects.get(username=newclient.username)),
+                            text=talent_old.comment
+                        )
+                        new_comment.save()
             else:
                 print("No newclient found")
         except Exception as e:
@@ -504,6 +502,7 @@ def get_rejected_talents(client_name, talentobject):
         "ORDER BY language" % (client_name, client_name)
     try:
         proresults = talentobject.objects.raw(proquery)
+        test = 'test'
     except Exception as e:
         print_error(e)
 
