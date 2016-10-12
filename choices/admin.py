@@ -1,5 +1,8 @@
 from django.contrib import admin
-import models
+from . import models
+from django import forms
+import os
+from django.conf import settings
 
 from django.forms import Textarea
 from django.db import models as dbmodels
@@ -49,7 +52,22 @@ class LanguageAdmin(admin.ModelAdmin):
 admin.site.register(models.Language, LanguageAdmin)
 
 
+class AudioFileAdminForm(forms.ModelForm):
+    def clean_audio_file(self):
+        if "audio_file" in self.changed_data:
+            current_file = self.cleaned_data.get("audio_file", False)
+            destination = settings.MEDIA_ROOT
+            if os.path.isfile(destination + current_file.name):
+                raise forms.ValidationError('A file named '
+                                            + current_file.name +
+                                            ' already exists. Please rename your file and try again.')
+            else:
+                return self.cleaned_data["audio_file"]
+
+
 class TalentAdmin(admin.ModelAdmin):
+    form = AudioFileAdminForm
+
     def get_queryset(self, request):
         qs = super(TalentAdmin, self).get_queryset(request)
         if request.user.userprofile.vendor:  # If the user has a vendor
@@ -63,7 +81,7 @@ class TalentAdmin(admin.ModelAdmin):
     list_filter = ('gender', 'type', 'age_range', 'vendor', 'language')
     list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range')
     list_display_links = ('id', 'welo_id')
-    readonly_fields = ('old_talent_id', 'times_rated', 'total_rating', 'comment', 'rate')
+    readonly_fields = ('old_talent_id', 'times_rated', 'total_rating', 'rate', 'welo_id')
     search_fields = ('welo_id', 'vendor__name', 'language__language')
     list_per_page = 100
 

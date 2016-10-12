@@ -22,7 +22,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'choices',
-    'legacy'
+    'legacy',
+    'django_cleanup'
 )
 
 if os.environ.get('LOCAL_MACHINE'):
