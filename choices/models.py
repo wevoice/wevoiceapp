@@ -10,7 +10,6 @@ import os
 class Client(models.Model):
     name = models.TextField()
     username = models.TextField()
-    password = models.TextField()
     logo = models.FileField(blank=True, null=True, upload_to='client_logos')
 
     def save(self, *args, **kwargs):

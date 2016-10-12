@@ -334,7 +334,6 @@ def create_client_objects(oldclient):
         newclient = Client.objects.create(
             name=oldclient.name,
             username=oldclient.username,
-            password=oldclient.password,
             logo="client_logos/%slogo.png" % oldclient.username
         )
         newuser = User.objects.get_or_create(
