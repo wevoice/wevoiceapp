@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.conf import settings
 from datetime import datetime
-import os
 
 
 class Client(models.Model):
@@ -167,7 +166,6 @@ class Talent(models.Model):
 class Vendor(models.Model):
     name = models.TextField()
     username = models.TextField()
-    password = models.TextField()
 
     def __unicode__(self):
         return self.name

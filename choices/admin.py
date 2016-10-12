@@ -33,7 +33,7 @@ class VendorAdmin(admin.ModelAdmin):
     formfield_overrides = {
         dbmodels.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols': 50})},
     }
-    list_display = ('id', 'name', 'username', 'password')
+    list_display = ('id', 'name', 'username')
     list_display_links = ('id', 'name')
     search_fields = ('name', 'username')
     list_per_page = 100

@@ -167,7 +167,7 @@ def selections(request, client_name, status, pk=None):
         'selection_types': selection_types
     })
 
-# @login_required
+
 def updatedb(request):
     from legacy.models import Talent as OldTalents
     from legacy.models import Client as OldClients
@@ -508,7 +508,6 @@ def get_rejected_talents(client_name, talentobject):
         "ORDER BY language" % (client_name, client_name)
     try:
         proresults = talentobject.objects.raw(proquery)
-        test = 'test'
     except Exception as e:
         print_error(e)
 
