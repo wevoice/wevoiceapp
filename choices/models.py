@@ -4,12 +4,13 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.conf import settings
 from datetime import datetime
+from .validators import validate_audiofile_extension, validate_imagefile_extension
 
 
 class Client(models.Model):
     name = models.TextField()
     username = models.TextField()
-    logo = models.FileField(blank=True, null=True, upload_to='client_logos')
+    logo = models.FileField(blank=True, null=True, upload_to='client_logos', validators=[validate_imagefile_extension])
 
     def save(self, *args, **kwargs):
         self.last_modified = datetime.now()
@@ -122,11 +123,11 @@ class Talent(models.Model):
     welo_id = models.TextField(blank=True, null=True)
     old_talent_id = models.IntegerField(default=0, blank=True, null=True)
     vendor = models.ForeignKey("Vendor", default=9, blank=True, null=True)
-    gender = models.CharField(max_length=32, choices=GENDER_CHOICES, default=1, blank=True, null=True)
-    age_range = models.CharField(max_length=32, choices=AGE_RANGE, default=3, blank=True, null=True)
-    language = models.ForeignKey("Language", blank=True, null=True)
+    gender = models.CharField(max_length=32, choices=GENDER_CHOICES)
+    age_range = models.CharField(max_length=32, choices=AGE_RANGE)
+    language = models.ForeignKey("Language")
     comment = models.TextField(null=True, blank=True)
-    audio_file = models.FileField(blank=True, null=True)
+    audio_file = models.FileField(validators=[validate_audiofile_extension])
     times_rated = models.IntegerField(default=0, blank=True, null=True)
     total_rating = models.IntegerField(default=0, blank=True, null=True)
     rate = models.TextField(null=True, blank=True)
