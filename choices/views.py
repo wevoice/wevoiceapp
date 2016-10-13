@@ -11,6 +11,24 @@ from django.db.models import Sum
 from datetime import datetime
 import sys
 import os
+from .validators import validate_user_is_authorized
+
+
+from django.shortcuts import render
+from django.template import RequestContext
+
+
+def handler404(request):
+    context = {'request':request}
+    response = render(request, '404.html', {}, context)
+    return response
+
+
+def handler500(request):
+    response = rende('500.html', {},
+                                  context_instance=RequestContext(request))
+    response.status_code = 500
+    return response
 
 
 def user_login(request):
@@ -48,6 +66,7 @@ def user_login(request):
 
 @login_required
 def index(request, client_name):
+    validate_user_is_authorized(request.user, client_name)
     client = get_client(client_name)
     return render(request, 'index.html', {
         'client': client,
@@ -102,29 +121,9 @@ def add_comment(request):
         return Http404("That page does not exist")
 
 
-def get_selections(client, status):
-    status_filter_dict = {
-        'for_approval': 'PREAPPROVED',
-        'accepted': 'APPROVED',
-        'rejected': 'REJECTED'
-    }
-    status_filter = None
-    if status in ['for_approval', 'accepted', 'rejected']:
-        status_filter = status_filter_dict[status]
-    all_selections = client.selection_set.filter(status=status_filter)
-    selection_types = []
-    for type_filter in ["PRO", "HR", "TTS"]:
-        currentselections = all_selections.filter(talent__type=type_filter)
-        if currentselections.exists():
-            selection_types.append({
-                'selections': currentselections,
-                'type': type_filter
-            })
-    return selection_types
-
-
 @login_required
 def selections(request, client_name, status, pk=None):
+    validate_user_is_authorized(request.user, client_name)
     comment_form, delete_comment_form, selection_types = (None, None, None)
     if request.method == 'POST':
         form = SelectionForm(request.POST)
@@ -166,6 +165,27 @@ def selections(request, client_name, status, pk=None):
         'status': status,
         'selection_types': selection_types
     })
+
+
+def get_selections(client, status):
+    status_filter_dict = {
+        'for_approval': 'PREAPPROVED',
+        'accepted': 'APPROVED',
+        'rejected': 'REJECTED'
+    }
+    status_filter = None
+    if status in ['for_approval', 'accepted', 'rejected']:
+        status_filter = status_filter_dict[status]
+    all_selections = client.selection_set.filter(status=status_filter)
+    selection_types = []
+    for type_filter in ["PRO", "HR", "TTS"]:
+        currentselections = all_selections.filter(talent__type=type_filter)
+        if currentselections.exists():
+            selection_types.append({
+                'selections': currentselections,
+                'type': type_filter
+            })
+    return selection_types
 
 
 def updatedb(request):

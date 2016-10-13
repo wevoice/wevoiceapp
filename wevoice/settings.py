@@ -9,7 +9,7 @@ SECRET_KEY = 'i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if os.environ.get('LOCAL_MACHINE'):
-    DEBUG = True
+    DEBUG = False
 else:
     DEBUG = False
 
