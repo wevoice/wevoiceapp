@@ -25,9 +25,8 @@ def handler404(request):
 
 
 def handler500(request):
-    response = rende('500.html', {},
-                                  context_instance=RequestContext(request))
-    response.status_code = 500
+    context = {'request':request}
+    response = render(request, '404.html', {}, context)
     return response
 
 
@@ -146,7 +145,7 @@ def selections(request, client_name, status, pk=None):
         form = SelectionForm
 
     client = get_client(client_name)
-    selection_types = get_selections(client, status)
+    no_selections, selection_types = get_selections(client, status)
 
     if pk and int(pk) > 0:
         pk = int(pk)
@@ -163,11 +162,13 @@ def selections(request, client_name, status, pk=None):
         'delete_comment_form': delete_comment_form,
         'pk': pk,
         'status': status,
+        'no_selections': no_selections,
         'selection_types': selection_types
     })
 
 
 def get_selections(client, status):
+    no_selections = False
     status_filter_dict = {
         'for_approval': 'PREAPPROVED',
         'accepted': 'APPROVED',
@@ -177,6 +178,8 @@ def get_selections(client, status):
     if status in ['for_approval', 'accepted', 'rejected']:
         status_filter = status_filter_dict[status]
     all_selections = client.selection_set.filter(status=status_filter)
+    if all_selections.count() == 0:
+        no_selections = True
     selection_types = []
     for type_filter in ["PRO", "HR", "TTS"]:
         currentselections = all_selections.filter(talent__type=type_filter)
@@ -185,7 +188,7 @@ def get_selections(client, status):
                 'selections': currentselections,
                 'type': type_filter
             })
-    return selection_types
+    return no_selections, selection_types
 
 
 def updatedb(request):
