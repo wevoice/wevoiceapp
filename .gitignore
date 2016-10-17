@@ -4,6 +4,5 @@ wevoiceenv
 *.pyc
 /static
 media
-!media/client_logos/
 .env
 db
