@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from models import Client, Talent, Vendor, Language, Selection, Comment, Rating, UserProfile
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import Group
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
@@ -383,7 +384,7 @@ def create_client_objects(oldclient):
         )
         newuser = User.objects.get_or_create(
             first_name=oldclient.name,
-            last_name="Admin",
+            last_name="Client",
             username=oldclient.username
         )
         newuser[0].password = oldclient.password
@@ -405,7 +406,7 @@ def create_vendor_objects(oldvendor):
         )
         newuser = User.objects.get_or_create(
             first_name=oldvendor.name,
-            last_name="Admin",
+            last_name="Vendor",
             username=oldvendor.username
         )
         newuser[0].password = oldvendor.password
@@ -415,6 +416,10 @@ def create_vendor_objects(oldvendor):
             user=newuser[0],
             vendor=newvendor
         )
+        group = Group.objects.get(name='Vendors')
+        newuser.groups.add(group)
+
+
     except Exception as e:
         print(e)
 

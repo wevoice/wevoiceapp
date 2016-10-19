@@ -71,7 +71,7 @@ class TalentAdmin(admin.ModelAdmin):
         qs = super(TalentAdmin, self).get_queryset(request)
         if request.user.userprofile.vendor:  # If the user has a vendor
             # change the queryset for this modeladmin
-            qs = qs.filter(vendor_name=request.user.userprofile.vendor.name)
+            qs = qs.filter(vendor__name=request.user.userprofile.vendor.name)
         return qs
 
     formfield_overrides = {
