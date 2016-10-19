@@ -1,5 +1,7 @@
+import sys
+import os
 from django.http import Http404, HttpResponseRedirect, HttpResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from forms import LoginForm, SelectionForm, CommentForm, DeleteCommentForm
 from django.contrib.auth.models import User
 from models import Client, Talent, Vendor, Language, Selection, Comment, Rating, UserProfile
@@ -9,25 +11,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from datetime import datetime
-import sys
-import os
 from .validators import validate_user_is_authorized
-
-
-from django.shortcuts import render
-from django.template import RequestContext
-
-
-def handler404(request):
-    context = {'request':request}
-    response = render(request, '404.html', {}, context)
-    return response
-
-
-def handler500(request):
-    context = {'request':request}
-    response = render(request, '404.html', {}, context)
-    return response
 
 
 def user_login(request):
@@ -177,7 +161,7 @@ def get_selections(client, status):
     status_filter = None
     if status in ['for_approval', 'accepted', 'rejected']:
         status_filter = status_filter_dict[status]
-    all_selections = client.selection_set.filter(status=status_filter)
+    all_selections = client.selection_set.filter(status=status_filter).order_by('talent__language')
     if all_selections.count() == 0:
         no_selections = True
     selection_types = []
@@ -194,6 +178,7 @@ def get_selections(client, status):
 def updatedb(request):
     from legacy.models import Talent as OldTalents
     from legacy.models import Client as OldClients
+    from legacy.models import Main as OldMainClients
     from legacy.models import Language as OldLanguages
     from legacy.models import Admin as OldAdmin
     from legacy.models import Vendor as OldVendors
@@ -214,24 +199,21 @@ def updatedb(request):
     )
 
     for oldadmin in OldAdmin.objects.all():
-        new_superuser = User.objects.create_superuser(
-            oldadmin.username,
-            '',
-            oldadmin.password
-        )
-        new_superuser.save()
-        new_userprofile = UserProfile.objects.create(
-            user=new_superuser,
-            client=superclient
-        )
-        new_userprofile.save()
+        if oldadmin.username != 'jdeere':
+            new_superuser = User.objects.create_superuser(
+                oldadmin.username,
+                '',
+                oldadmin.password
+            )
+            new_superuser.save()
+            new_userprofile = UserProfile.objects.create(
+                user=new_superuser,
+                client=superclient
+            )
+            new_userprofile.save()
 
     for oldvendor in OldVendors.objects.all():
-        Vendor.objects.create(
-            name=oldvendor.name,
-            username=oldvendor.username,
-            password=oldvendor.password
-        )
+        create_vendor_objects(oldvendor)
 
     for oldlanguage in OldLanguages.objects.all():
         Language.objects.create(
@@ -250,6 +232,13 @@ def updatedb(request):
         elif oldtalent.age_range == "46-75":
             age_range = "46-75"
 
+        # try:
+        #     newtalent.audio_file = oldtalent.sample_url.split('/')[1]
+        #     newtalent.save()
+        # except Exception as e:
+        #     print_error(e)
+        #     print(oldtalent.sample_url)
+
         try:
             newtalent = Talent.objects.create(
                 old_talent_id=oldtalent.id,
@@ -258,7 +247,7 @@ def updatedb(request):
                 gender=oldtalent.gender,
                 age_range=age_range,
                 language=language,
-                audio_file=None,
+                audio_file=oldtalent.sample_url.split('/')[1],
                 times_rated=None,
                 total_rating=None,
                 comment=oldtalent.comment,
@@ -287,15 +276,48 @@ def updatedb(request):
         except Exception as e:
             print_error(e)
 
-        try:
-            newtalent.audio_file = oldtalent.sample_url.split('/')[1]
-            newtalent.save()
-        except Exception as e:
-            print_error(e)
-            print(oldtalent.sample_url)
-
     for oldclient in OldClients.objects.all():
-        process_client(oldclient, OldTalents)
+        old_main_clients = [
+            'demo_client',
+            'vmware',
+            'nationalinstruments',
+            'LS2015',
+            'NMHG',
+            'BC',
+            'ELmind',
+            'rethinkrobotics',
+            'uber-voice',
+            'resaas'
+        ]
+        if oldclient.username not in old_main_clients:
+            print("Processing Client: " + oldclient.username)
+            process_client(oldclient, OldTalents)
+    for oldclientusername in ['Rethink Robotics', 'E Learning Mind', 'BC', 'National Instruments']:
+        print("Processing Client: " + oldclientusername)
+        oldclient = OldClients.objects.filter(name=oldclientusername)[0]
+        newclient = create_client_objects(oldclient)
+        oldmainclienttalents = OldMainClients.objects.filter(client=oldclientusername)
+        for talent in oldmainclienttalents:
+            try:
+                newtalent = Talent.objects.get(welo_id=talent.talent)
+                if talent.accepted == 'y':
+                    status = "APPROVED"
+                else:
+                    status = "REJECTED"
+                new_selection = Selection.objects.create(talent=newtalent, client=newclient)
+                new_selection.status = status
+                new_selection.save()
+            except Exception as e:
+                print_error(e)
+        for talent in OldTalents.objects.filter(pre_approved="y").filter(allclients="y"):
+            if (talent.welo_id,) not in oldmainclienttalents.values_list("talent"):
+                try:
+                    newtalent = Talent.objects.get(welo_id=talent.welo_id)
+                    new_selection = Selection.objects.create(talent=newtalent, client=newclient)
+                    new_selection.status = "PREAPPROVED"
+                    new_selection.save()
+                except Exception as e:
+                    print_error(e)
 
     return HttpResponse("All done!")
 
@@ -371,6 +393,28 @@ def create_client_objects(oldclient):
             client=newclient
         )
         return newclient
+    except Exception as e:
+        print(e)
+
+
+def create_vendor_objects(oldvendor):
+    try:
+        newvendor = Vendor.objects.create(
+            name=oldvendor.name,
+            username=oldvendor.username,
+        )
+        newuser = User.objects.get_or_create(
+            first_name=oldvendor.name,
+            last_name="Admin",
+            username=oldvendor.username
+        )
+        newuser[0].password = oldvendor.password
+        newuser[0].is_staff = True
+        newuser[0].save()
+        UserProfile.objects.get_or_create(
+            user=newuser[0],
+            vendor=newvendor
+        )
     except Exception as e:
         print(e)
 
