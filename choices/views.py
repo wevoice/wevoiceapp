@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from models import Client, Talent, Vendor, Language, Selection, Comment, Rating, UserProfile
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
@@ -222,7 +222,6 @@ def updatedb(request):
         )
 
     for oldtalent in OldTalents.objects.all():
-        # The old Talent fields will be used as the new Talent fields.
         vendor, created = Vendor.objects.get_or_create(name=oldtalent.vendor_name)
         language, created = Language.objects.get_or_create(language=oldtalent.language)
         age_range = "26-45"
@@ -232,13 +231,6 @@ def updatedb(request):
             age_range = "26-45"
         elif oldtalent.age_range == "46-75":
             age_range = "46-75"
-
-        # try:
-        #     newtalent.audio_file = oldtalent.sample_url.split('/')[1]
-        #     newtalent.save()
-        # except Exception as e:
-        #     print_error(e)
-        #     print(oldtalent.sample_url)
 
         try:
             newtalent = Talent.objects.create(
@@ -286,14 +278,20 @@ def updatedb(request):
             'NMHG',
             'BC',
             'ELmind',
+            'Workday',
             'rethinkrobotics',
             'uber-voice',
+            'workday',
+            'UTC',
+            'avigilon',
             'resaas'
         ]
         if oldclient.username not in old_main_clients:
             print("Processing Client: " + oldclient.username)
             process_client(oldclient, OldTalents)
-    for oldclientusername in ['Rethink Robotics', 'E Learning Mind', 'BC', 'National Instruments']:
+
+    nonbranded = ['Orlando', 'Rethink Robotics', 'E Learning Mind', 'BC', 'National Instruments', 'Workday', 'UTC', 'avigilon']
+    for oldclientusername in nonbranded:
         print("Processing Client: " + oldclientusername)
         oldclient = OldClients.objects.filter(name=oldclientusername)[0]
         newclient = create_client_objects(oldclient)
@@ -337,7 +335,6 @@ def process_client(oldclient, oldtalents):
         process_talent_types(
             status="PREAPPROVED",
             oldclient=oldclient,
-            oldtalents=oldtalents,
             newclient=newclient,
             process_function=get_talents_for_approval
         )
@@ -352,7 +349,6 @@ def process_client(oldclient, oldtalents):
             process_talent_types(
                 status="APPROVED",
                 oldclient=oldclient,
-                oldtalents=oldtalents,
                 newclient=newclient,
                 process_function=get_accepted_talents
             )
@@ -369,7 +365,6 @@ def process_client(oldclient, oldtalents):
             process_talent_types(
                 status="REJECTED",
                 oldclient=oldclient,
-                oldtalents=oldtalents,
                 newclient=newclient,
                 process_function=get_rejected_talents
             )
@@ -404,29 +399,34 @@ def create_vendor_objects(oldvendor):
             name=oldvendor.name,
             username=oldvendor.username,
         )
-        newuser = User.objects.get_or_create(
+        newuser, created = User.objects.get_or_create(
             first_name=oldvendor.name,
             last_name="Vendor",
             username=oldvendor.username
         )
-        newuser[0].password = oldvendor.password
-        newuser[0].is_staff = True
-        newuser[0].save()
+        newuser.password = oldvendor.password
+        newuser.is_staff = True
+        newuser.save()
         UserProfile.objects.get_or_create(
-            user=newuser[0],
+            user=newuser,
             vendor=newvendor
         )
-        group = Group.objects.get(name='Vendors')
-        newuser.groups.add(group)
-
+        new_group, created = Group.objects.get_or_create(name='Vendors')
+        can_add_talent = Permission.objects.filter(name='Can add talent')[0]
+        can_change_talent = Permission.objects.filter(name='Can change talent')[0]
+        can_delete_talent = Permission.objects.filter(name='Can delete talent')[0]
+        new_group.permissions.add(can_add_talent)
+        new_group.permissions.add(can_change_talent)
+        new_group.permissions.add(can_delete_talent)
+        newuser.groups.add(new_group)
 
     except Exception as e:
         print(e)
 
 
-def process_talent_types(status, oldclient, oldtalents, newclient, process_function):
+def process_talent_types(status, oldclient, newclient, process_function):
     try:
-        protalents, hometalents, ttstalents = process_function(oldclient.username, oldtalents)
+        protalents, hometalents, ttstalents = process_function(oldclient.username)
     except Exception as e:
         print_error(e)
     else:
@@ -439,10 +439,10 @@ def process_type(talent_type, newclient, status, type_of_talent):
     for talent_old in talent_type:
         try:
             talent = None
-            if hasattr(talent_old, 'welo_id'):
-                talent = Talent.objects.get(welo_id=talent_old.welo_id)
-            elif hasattr(talent_old, 'talent'):
-                talent = Talent.objects.get(welo_id=talent_old.talent)
+            if 'talent' in talent_old:
+                talent = Talent.objects.get(welo_id=talent_old['talent'])
+            elif 'welo_id' in talent_old:
+                talent = Talent.objects.get(welo_id=talent_old['welo_id'])
             if newclient:
                 new_selection, created = Selection.objects.get_or_create(talent=talent, client=newclient)
                 if not created:
@@ -452,16 +452,6 @@ def process_type(talent_type, newclient, status, type_of_talent):
                 else:
                     new_selection.status = status
                     new_selection.save()
-
-                # if new_selection:
-                #     if talent_old.comment != '':
-                #         new_comment = Comment(
-                #             selection=new_selection[0],
-                #             author=UserProfile.objects.get(user=User.objects.get(username=newclient.username)),
-                #             text=talent_old.comment
-                #         )
-                #         new_comment.save()
-
             else:
                 print("No newclient found")
         except Exception as e:
@@ -495,7 +485,18 @@ def print_error(e):
     print(e, exc_type, fname, exc_tb.tb_lineno)
 
 
-def get_talents_for_approval(client_name, talentobject):
+def my_custom_sql(query):
+    from django.db import connections
+    cursor = connections['legacy'].cursor()
+    cursor.execute(query)
+    columns = [col[0] for col in cursor.description]
+    return [
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+    ]
+
+
+def get_talents_for_approval(client_name):
 
     proresults, homeresults, ttsresults = None, None, None
 
@@ -513,23 +514,23 @@ def get_talents_for_approval(client_name, talentobject):
         "ORDER BY language" % (client_name, client_name, client_name)
 
     try:
-        proresults = talentobject.objects.raw(proquery)
+        proresults = my_custom_sql(proquery)
     except Exception as e:
         print_error(e)
 
     try:
-        homeresults = talentobject.objects.raw(homequery)
+        homeresults = my_custom_sql(homequery)
     except Exception as e:
         print_error(e)
 
     try:
-        ttsresults = talentobject.objects.raw(ttsquery)
+        ttsresults = my_custom_sql(ttsquery)
     except Exception as e:
         print_error(e)
     return proresults, homeresults, ttsresults
 
 
-def get_accepted_talents(client_name, talentobject):
+def get_accepted_talents(client_name):
 
     proresults, homeresults, ttsresults = None, None, None
 
@@ -537,32 +538,34 @@ def get_accepted_talents(client_name, talentobject):
         "WHERE accepted='y' " \
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='n') " \
         "ORDER BY language" % (client_name, client_name)
+
     homequery = "SELECT * FROM %s " \
         "WHERE accepted='y' " \
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='y' AND talent.tts='n') " \
         "ORDER BY language" % (client_name, client_name)
+
     ttsquery = "SELECT * FROM %s " \
         "WHERE accepted='y' " \
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
         "ORDER BY language" % (client_name, client_name)
     try:
-        proresults = talentobject.objects.raw(proquery)
+        proresults = my_custom_sql(proquery)
     except Exception as e:
         print_error(e)
 
     try:
-        homeresults = talentobject.objects.raw(homequery)
+        homeresults = my_custom_sql(homequery)
     except Exception as e:
         print_error(e)
 
     try:
-        ttsresults = talentobject.objects.raw(ttsquery)
+        ttsresults = my_custom_sql(ttsquery)
     except Exception as e:
         print_error(e)
     return proresults, homeresults, ttsresults
 
 
-def get_rejected_talents(client_name, talentobject):
+def get_rejected_talents(client_name):
 
     proresults, homeresults, ttsresults = None, None, None
 
@@ -579,17 +582,17 @@ def get_rejected_talents(client_name, talentobject):
         "AND EXISTS (SELECT * FROM talent WHERE %s.talent=talent.welo_id AND talent.hr='n' AND talent.tts='y') " \
         "ORDER BY language" % (client_name, client_name)
     try:
-        proresults = talentobject.objects.raw(proquery)
+        proresults = my_custom_sql(proquery)
     except Exception as e:
         print_error(e)
 
     try:
-        homeresults = talentobject.objects.raw(homequery)
+        homeresults = my_custom_sql(homequery)
     except Exception as e:
         print_error(e)
 
     try:
-        ttsresults = talentobject.objects.raw(ttsquery)
+        ttsresults = my_custom_sql(ttsquery)
     except Exception as e:
         print_error(e)
     return proresults, homeresults, ttsresults
