@@ -123,7 +123,7 @@ admin.site.register(models.Talent, TalentAdmin)
 class SelectionAdmin(admin.ModelAdmin):
     list_filter = ('status',
                    'talent__gender',
-                   ('client__name', admin.RelatedOnlyFieldListFilter),
+                   ('client', admin.RelatedOnlyFieldListFilter),
                    ('talent__vendor', admin.RelatedOnlyFieldListFilter),
                    ('talent__language', admin.RelatedOnlyFieldListFilter)
                    )
