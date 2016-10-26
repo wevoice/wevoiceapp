@@ -93,10 +93,6 @@ def add_comment(request):
                     talent=selection.talent,
                     defaults={'rating': form.cleaned_data['rating']}
                 )
-                selection.talent.times_rated = int(Rating.objects.filter(talent=selection.talent).count())
-                selection.talent.total_rating = \
-                    Rating.objects.filter(talent=selection.talent).aggregate(Sum('rating'))['rating__sum']
-                selection.talent.save()
 
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'), {
                 'selection': selection,
@@ -234,15 +230,12 @@ def updatedb(request):
 
         try:
             newtalent = Talent.objects.create(
-                old_talent_id=oldtalent.id,
                 welo_id=oldtalent.welo_id,
                 vendor=vendor,
                 gender=oldtalent.gender,
                 age_range=age_range,
                 language=language,
                 audio_file=oldtalent.sample_url.split('/')[1],
-                times_rated=None,
-                total_rating=None,
                 comment=oldtalent.comment,
                 rate=oldtalent.rate,
             )
@@ -290,7 +283,8 @@ def updatedb(request):
             print("Processing Client: " + oldclient.username)
             process_client(oldclient, OldTalents)
 
-    nonbranded = ['Orlando', 'Rethink Robotics', 'E Learning Mind', 'BC', 'National Instruments', 'Workday', 'UTC', 'avigilon']
+    nonbranded = ['Orlando', 'Rethink Robotics', 'E Learning Mind', 'BC', 'National Instruments', 'Workday', 'UTC',
+                  'avigilon']
     for oldclientusername in nonbranded:
         print("Processing Client: " + oldclientusername)
         oldclient = OldClients.objects.filter(name=oldclientusername)[0]

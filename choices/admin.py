@@ -64,6 +64,14 @@ class AudioFileAdminForm(forms.ModelForm):
                 return self.cleaned_data["audio_file"]
 
 
+class RatingAdmin(admin.ModelAdmin):
+    list_display = ('id', 'rating', 'talent', 'rater')
+    list_filter = ('rating', ('rater', admin.RelatedOnlyFieldListFilter))
+    search_fields = ('talent__welo_id',)
+
+admin.site.register(models.Rating, RatingAdmin)
+
+
 class TalentAdmin(admin.ModelAdmin):
     form = AudioFileAdminForm
 
@@ -77,10 +85,18 @@ class TalentAdmin(admin.ModelAdmin):
     formfield_overrides = {
         dbmodels.TextField: {'widget': Textarea(attrs={'rows': 1, 'cols': 50})},
     }
-    list_filter = ('gender', 'type', 'age_range', 'vendor', 'language')
-    list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range')
+    list_filter = ('gender',
+                   'type',
+                   'age_range',
+                   'vendor',
+                   ('language', admin.RelatedOnlyFieldListFilter),
+                   'average_rating',
+                   'times_accepted',
+                   'times_rejected')
+    list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range',
+                    'average_rating', 'times_accepted', 'times_rejected')
     list_display_links = ('id', 'welo_id')
-    readonly_fields = ('old_talent_id', 'times_rated', 'total_rating', 'rate', 'welo_id')
+    readonly_fields = ('rate', 'welo_id')
     search_fields = ('welo_id', 'vendor__name', 'language__language')
     list_per_page = 100
 
@@ -104,12 +120,13 @@ class TalentAdmin(admin.ModelAdmin):
 admin.site.register(models.Talent, TalentAdmin)
 
 
-class TalentInline(admin.TabularInline):
-    model = models.Talent
-
-
 class SelectionAdmin(admin.ModelAdmin):
-    list_filter = ('status', 'talent__gender', 'client__name', 'talent__vendor', 'talent__language', )
+    list_filter = ('status',
+                   'talent__gender',
+                   ('client__name', admin.RelatedOnlyFieldListFilter),
+                   ('talent__vendor', admin.RelatedOnlyFieldListFilter),
+                   ('talent__language', admin.RelatedOnlyFieldListFilter)
+                   )
     list_display = ('id', 'talent', 'client', 'status', 'audio_file_player', 'talent_language', 'talent_gender',
                     'talent_vendor', 'talent_age_range')
     search_fields = ['client__username', 'client__name', 'talent__welo_id', 'talent__vendor__name']
@@ -130,8 +147,11 @@ admin.site.register(models.Selection, SelectionAdmin)
 
 
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('selection', 'author', 'text', 'created_date')
-    search_fields = ['selection']
+    list_filter = (('selection__client', admin.RelatedOnlyFieldListFilter),
+                   ('author', admin.RelatedOnlyFieldListFilter)
+                   )
+    list_display = ('selection', 'author', 'text', 'comment_client', 'created_date')
+    search_fields = ['text', 'author__user__username', 'author__client__username', 'selection__talent__welo_id']
 admin.site.register(models.Comment, CommentAdmin)
 
 

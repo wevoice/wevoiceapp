@@ -12,7 +12,7 @@ class LoginForm(forms.Form):
     )
     password = forms.CharField(
         max_length=254,
-        widget=forms.TextInput(attrs={'class': "inputboxes01"}),
+        widget=forms.PasswordInput(attrs={'class': "inputboxes01"}),
         error_messages={'incorrect': 'Password is incorrect'}
     )
 
