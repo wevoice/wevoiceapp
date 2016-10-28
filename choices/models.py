@@ -60,6 +60,9 @@ class Rating(models.Model):
     class Meta:
         unique_together = ('talent', 'rater',)
 
+    def __str__(self):
+        return str(self.pk)
+
 
 class Talent(models.Model):
     TYPE_CHOICES = (
@@ -92,8 +95,6 @@ class Talent(models.Model):
     audio_file = models.FileField(blank=True, null=True, validators=[validate_audiofile_extension])
     rate = models.TextField(null=True, blank=True)
     average_rating = models.IntegerField(null=True, blank=True)
-    times_rejected = models.IntegerField(null=True, blank=True)
-    times_accepted = models.IntegerField(null=True, blank=True)
 
     def audio_file_player(self):
         """audio player tag for admin"""
@@ -116,13 +117,17 @@ class Talent(models.Model):
         return self.rating_set.aggregate(Avg('rating')).values()[0]
     get_average_rating.short_description = 'Rating'
 
-    def get_times_rejected(self):
-        return self.selection_set.filter(status="REJECTED").count()
-    get_times_rejected.short_description = 'Rejected Total'
+    def get_times_preapproved(self):
+        return self.selection_set.filter(status="PREAPPROVED").count()
+    get_times_preapproved.short_description = 'Preapproved Total'
 
     def get_times_accepted(self):
         return self.selection_set.filter(status="APPROVED").count()
     get_times_accepted.short_description = 'Accepted Total'
+
+    def get_times_rejected(self):
+        return self.selection_set.filter(status="REJECTED").count()
+    get_times_rejected.short_description = 'Rejected Total'
 
     def __unicode__(self):
         return self.welo_id
@@ -135,8 +140,6 @@ class Talent(models.Model):
     def save(self, *args, **kwargs):
         self.welo_id = self.audio_file.name.split('.mp3')[0]
         self.average_rating = self.get_average_rating()
-        # self.times_rejected = self.get_times_rejected()
-        # self.times_accepted = self.get_times_accepted()
         super(Talent, self).save(*args, **kwargs)
 
 
@@ -235,4 +238,4 @@ class Comment(models.Model):
         self.save()
 
     def __str__(self):
-        return self.text
+        return str(self.pk)

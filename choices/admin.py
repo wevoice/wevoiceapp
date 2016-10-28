@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.forms import Textarea
 from django.db import models as dbmodels
-from django.db.models import Count, Max, Avg
+from django.db.models import Count, Q
 
 
 class UserProfileInline(admin.StackedInline):
@@ -83,38 +83,64 @@ class RatingAdmin(admin.ModelAdmin):
 admin.site.register(models.Rating, RatingAdmin)
 
 
-class RejectedFilter(admin.SimpleListFilter):
-    title = 'Times Rejected'
-    parameter_name = 'rejected'
+class InReviewFilter(admin.SimpleListFilter):
+    parameter_name = 'under_review'
+    title = 'in review'
+    YES, NO = 1, 0
 
     def lookups(self, request, model_admin):
-        rejected = model_admin.model.objects.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
-        max_rejected = rejected.aggregate(max=Max('num_rejected'))
+        return (
+            (self.YES, 'yes'),
+            (self.NO, 'no'),
+        )
 
+    def queryset(self, request, queryset):
+        if self.value() and int(self.value()) == self.YES:
+            return queryset.filter(
+                Q(selection__status="REJECTED") |
+                Q(selection__status="APPROVED") |
+                Q(selection__status="PREAPPROVED")
+            ).distinct()
+        if self.value() and int(self.value()) == self.NO:
+            return queryset.exclude(
+                Q(selection__status="REJECTED") |
+                Q(selection__status="APPROVED") |
+                Q(selection__status="PREAPPROVED")
+            ).distinct()
+        return queryset
+
+
+class PreapprovedFilter(admin.SimpleListFilter):
+    title = 'times preapproved'
+    parameter_name = 'preapproved'
+
+    def lookups(self, request, model_admin):
+        preapproved = model_admin.model.objects.filter(selection__status="PREAPPROVED").annotate(num_preapproved=Count('pk'))
+        preapproved_counts = preapproved.order_by().values_list('num_preapproved', flat=True).distinct()
         tuple_set = ()
-        for number in range(1, max_rejected['max'] + 1):
+        for number in sorted(preapproved_counts):
             tuple_set += ((number, str(number)),)
 
         return tuple_set
 
     def queryset(self, request, queryset):
         if self.value():
-            rejected = queryset.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
-            qs = rejected.filter(num_rejected__gte=self.value())
+            approved = queryset.filter(selection__status="PREAPPROVED").annotate(num_preapproved=Count('pk'))
+            qs = approved.filter(num_preapproved=self.value())
             return qs
         else:
             return queryset
 
 
 class ApprovedFilter(admin.SimpleListFilter):
-    title = 'Times Approved'
+    title = 'times accepted'
     parameter_name = 'approved'
 
     def lookups(self, request, model_admin):
         approved = model_admin.model.objects.filter(selection__status="APPROVED").annotate(num_approved=Count('pk'))
-        max_approved = approved.aggregate(max=Max('num_approved'))
+        approved_counts = approved.order_by().values_list('num_approved', flat=True).distinct()
         tuple_set = ()
-        for number in range(1, max_approved['max'] + 1):
+        for number in sorted(approved_counts):
             tuple_set += ((number, str(number)),)
 
         return tuple_set
@@ -122,14 +148,44 @@ class ApprovedFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value():
             approved = queryset.filter(selection__status="APPROVED").annotate(num_approved=Count('pk'))
-            qs = approved.filter(num_approved__gte=self.value())
+            qs = approved.filter(num_approved=self.value())
             return qs
         else:
             return queryset
 
 
+class RejectedFilter(admin.SimpleListFilter):
+    title = 'times rejected'
+    parameter_name = 'rejected'
+
+    def lookups(self, request, model_admin):
+        rejected = model_admin.model.objects.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
+        rejected_counts = rejected.order_by().values_list('num_rejected', flat=True).distinct()
+
+        tuple_set = ()
+        for number in sorted(rejected_counts):
+            tuple_set += ((number, str(number)),)
+
+        return tuple_set
+
+    def queryset(self, request, queryset):
+        if self.value():
+            rejected = queryset.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
+            qs = rejected.filter(num_rejected=self.value())
+            return qs
+        else:
+            return queryset
+
+
+class RatingInline(admin.StackedInline):
+    model = models.Rating
+    readonly_fields = ('rater', 'talent', 'rating')
+    extra = 0
+
+
 class TalentAdmin(admin.ModelAdmin):
     form = AudioFileAdminForm
+    inlines = [RatingInline]
 
     def get_queryset(self, request):
         qs = super(TalentAdmin, self).get_queryset(request)
@@ -144,12 +200,14 @@ class TalentAdmin(admin.ModelAdmin):
                    'type',
                    'age_range',
                    'average_rating',
-                   RejectedFilter,
+                   InReviewFilter,
+                   PreapprovedFilter,
                    ApprovedFilter,
+                   RejectedFilter,
                    'vendor',
                    ('language', admin.RelatedOnlyFieldListFilter))
     list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range',
-                    'average_rating', 'get_times_accepted', 'get_times_rejected')
+                    'average_rating', 'get_times_preapproved', 'get_times_accepted', 'get_times_rejected')
     list_display_links = ('id', 'welo_id')
     readonly_fields = ('rate', 'welo_id')
     search_fields = ('welo_id', 'vendor__name', 'language__language')
@@ -175,12 +233,6 @@ class TalentAdmin(admin.ModelAdmin):
 admin.site.register(models.Talent, TalentAdmin)
 
 
-class CommentInline(admin.StackedInline):
-    model = models.Comment
-    readonly_fields = ('selection','author','text','created_date')
-    extra = 0
-
-
 class CommentsCountFilter(admin.SimpleListFilter):
     parameter_name = 'is_commented'
     title = 'Has Comments'
@@ -202,6 +254,12 @@ class CommentsCountFilter(admin.SimpleListFilter):
             return qs.filter(comments__count__lt=self.THRESHOLD)
 
         return queryset
+
+
+class CommentInline(admin.StackedInline):
+    model = models.Comment
+    readonly_fields = ('selection', 'author', 'text', 'created_date')
+    extra = 0
 
 
 class SelectionAdmin(admin.ModelAdmin):
