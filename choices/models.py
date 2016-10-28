@@ -31,51 +31,13 @@ class UserProfile(models.Model):
     client = models.ForeignKey("Client", blank=True, null=True)
     vendor = models.ForeignKey("Vendor", blank=True, null=True)
 
-    def first_name(self):
-        return self.user.first_name
-
-    first_name.short_description = 'First Name'
-
-    def last_name(self):
-        return self.user.last_name
-
-    last_name.short_description = 'Last Name'
-
-    def email(self):
-        return self.user.email
-
-    email.short_description = 'Email'
-
-    def is_active(self):
-        return self.user.is_active
-
-    is_active.short_description = 'Active'
-
-    def is_superuser(self):
-        return self.user.is_superuser
-
-    is_superuser.short_description = 'Superuser'
-
-    def date_joined(self):
-        return self.user.date_joined
-
-    date_joined.short_description = 'Joined'
-
-    def last_login(self):
-        return self.user.last_login
-
-    last_login.short_description = 'Last Login'
-
-    def is_staff(self):
-        return self.user.is_staff
-
-    is_staff.short_description = 'Is Staff'
-
     def __unicode__(self):
-        return self.user.username
-
-    class Meta:
-        ordering = ['user__username']
+        if self.client:
+            return self.client.username
+        elif self.vendor:
+            return self.vendor.username
+        else:
+            return "N/A"
 
 
 class Language(models.Model):
@@ -93,15 +55,10 @@ class Language(models.Model):
 class Rating(models.Model):
     rating = models.IntegerField(default=0, blank=True, null=True)
     talent = models.ForeignKey('Talent')
-    rater = models.ForeignKey('UserProfile')
+    rater = models.ForeignKey(UserProfile)
 
     class Meta:
         unique_together = ('talent', 'rater',)
-
-
-class CustomerManager(models.Manager):
-    def get_query_set(self):
-        return super(CustomerManager, self).get_query_set().annotate(models.Count('order'))
 
 
 class Talent(models.Model):
@@ -161,11 +118,11 @@ class Talent(models.Model):
 
     def get_times_rejected(self):
         return self.selection_set.filter(status="REJECTED").count()
-    times_rejected.short_description = 'Rejected Total'
+    get_times_rejected.short_description = 'Rejected Total'
 
     def get_times_accepted(self):
         return self.selection_set.filter(status="APPROVED").count()
-    times_accepted.short_description = 'Accepted Total'
+    get_times_accepted.short_description = 'Accepted Total'
 
     def __unicode__(self):
         return self.welo_id
@@ -178,8 +135,8 @@ class Talent(models.Model):
     def save(self, *args, **kwargs):
         self.welo_id = self.audio_file.name.split('.mp3')[0]
         self.average_rating = self.get_average_rating()
-        self.times_rejected = self.get_times_rejected()
-        self.times_accepted = self.get_times_accepted()
+        # self.times_rejected = self.get_times_rejected()
+        # self.times_accepted = self.get_times_accepted()
         super(Talent, self).save(*args, **kwargs)
 
 
@@ -221,6 +178,14 @@ class Selection(models.Model):
     def talent_age_range(self):
         return self.talent.age_range
     talent_age_range.short_description = 'Age Range'
+
+    def total_comments(self):
+        comments_count = self.comments.all().count()
+        if comments_count > 0:
+            test = "test"
+        return comments_count
+
+    total_comments.short_description = 'Total Comments'
 
     def talent_vendor(self):
         return self.talent.vendor

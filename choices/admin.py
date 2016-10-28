@@ -3,19 +3,31 @@ from . import models
 from django import forms
 import os
 from django.conf import settings
-
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.forms import Textarea
 from django.db import models as dbmodels
+from django.db.models import Count, Max, Avg
 
 
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'first_name', 'last_name', 'client', 'vendor', 'email', 'is_active', 'is_staff',
-                    'is_superuser', 'date_joined', 'last_login')
-    list_display_links = ('user',)
-    list_filter = ('client',)
-    search_fields = ('client__name', 'client__username', 'user__username', 'user__first_name')
-    list_per_page = 100
-admin.site.register(models.UserProfile, UserProfileAdmin)
+class UserProfileInline(admin.StackedInline):
+    model = models.UserProfile
+    max_num = 1
+    can_delete = False
+
+
+class UserAdmin(AuthUserAdmin):
+    list_display = ('id', 'username', 'first_name', 'last_name', 'is_active', 'is_superuser', 'email')
+
+    def add_view(self, *args, **kwargs):
+        self.inlines = []
+        return super(UserAdmin, self).add_view(*args, **kwargs)
+
+    def change_view(self, *args, **kwargs):
+        self.inlines = [UserProfileInline]
+        return super(UserAdmin, self).change_view(*args, **kwargs)
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
 
 
 class ClientAdmin(admin.ModelAdmin):
@@ -68,8 +80,52 @@ class RatingAdmin(admin.ModelAdmin):
     list_display = ('id', 'rating', 'talent', 'rater')
     list_filter = ('rating', ('rater', admin.RelatedOnlyFieldListFilter))
     search_fields = ('talent__welo_id',)
-
 admin.site.register(models.Rating, RatingAdmin)
+
+
+class RejectedFilter(admin.SimpleListFilter):
+    title = 'Times Rejected'
+    parameter_name = 'rejected'
+
+    def lookups(self, request, model_admin):
+        rejected = model_admin.model.objects.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
+        max_rejected = rejected.aggregate(max=Max('num_rejected'))
+
+        tuple_set = ()
+        for number in range(1, max_rejected['max'] + 1):
+            tuple_set += ((number, str(number)),)
+
+        return tuple_set
+
+    def queryset(self, request, queryset):
+        if self.value():
+            rejected = queryset.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
+            qs = rejected.filter(num_rejected__gte=self.value())
+            return qs
+        else:
+            return queryset
+
+
+class ApprovedFilter(admin.SimpleListFilter):
+    title = 'Times Approved'
+    parameter_name = 'approved'
+
+    def lookups(self, request, model_admin):
+        approved = model_admin.model.objects.filter(selection__status="APPROVED").annotate(num_approved=Count('pk'))
+        max_approved = approved.aggregate(max=Max('num_approved'))
+        tuple_set = ()
+        for number in range(1, max_approved['max'] + 1):
+            tuple_set += ((number, str(number)),)
+
+        return tuple_set
+
+    def queryset(self, request, queryset):
+        if self.value():
+            approved = queryset.filter(selection__status="APPROVED").annotate(num_approved=Count('pk'))
+            qs = approved.filter(num_approved__gte=self.value())
+            return qs
+        else:
+            return queryset
 
 
 class TalentAdmin(admin.ModelAdmin):
@@ -77,8 +133,7 @@ class TalentAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super(TalentAdmin, self).get_queryset(request)
-        if request.user.userprofile.vendor:  # If the user has a vendor
-            # change the queryset for this modeladmin
+        if request.user.userprofile.vendor:
             qs = qs.filter(vendor__name=request.user.userprofile.vendor.name)
         return qs
 
@@ -88,13 +143,13 @@ class TalentAdmin(admin.ModelAdmin):
     list_filter = ('gender',
                    'type',
                    'age_range',
-                   'vendor',
-                   ('language', admin.RelatedOnlyFieldListFilter),
                    'average_rating',
-                   'times_accepted',
-                   'times_rejected')
+                   RejectedFilter,
+                   ApprovedFilter,
+                   'vendor',
+                   ('language', admin.RelatedOnlyFieldListFilter))
     list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range',
-                    'average_rating', 'times_accepted', 'times_rejected')
+                    'average_rating', 'get_times_accepted', 'get_times_rejected')
     list_display_links = ('id', 'welo_id')
     readonly_fields = ('rate', 'welo_id')
     search_fields = ('welo_id', 'vendor__name', 'language__language')
@@ -120,15 +175,47 @@ class TalentAdmin(admin.ModelAdmin):
 admin.site.register(models.Talent, TalentAdmin)
 
 
+class CommentInline(admin.StackedInline):
+    model = models.Comment
+    readonly_fields = ('selection','author','text','created_date')
+    extra = 0
+
+
+class CommentsCountFilter(admin.SimpleListFilter):
+    parameter_name = 'is_commented'
+    title = 'Has Comments'
+    YES, NO = 1, 0
+    THRESHOLD = 1
+
+    def lookups(self, request, model_admin):
+        return (
+            (self.YES, 'yes'),
+            (self.NO, 'no'),
+        )
+
+    def queryset(self, request, queryset):
+        qs = queryset.annotate(Count('comments'))
+
+        if self.value() and int(self.value()) == self.YES:
+            return qs.filter(comments__count__gte=self.THRESHOLD)
+        if self.value() and int(self.value()) == self.NO:
+            return qs.filter(comments__count__lt=self.THRESHOLD)
+
+        return queryset
+
+
 class SelectionAdmin(admin.ModelAdmin):
+    inlines = [CommentInline]
     list_filter = ('status',
                    'talent__gender',
+                   CommentsCountFilter,
+                   'talent__average_rating',
                    ('client', admin.RelatedOnlyFieldListFilter),
                    ('talent__vendor', admin.RelatedOnlyFieldListFilter),
                    ('talent__language', admin.RelatedOnlyFieldListFilter)
                    )
-    list_display = ('id', 'talent', 'client', 'status', 'audio_file_player', 'talent_language', 'talent_gender',
-                    'talent_vendor', 'talent_age_range')
+    list_display = ('id', 'talent', 'client', 'status', 'audio_file_player', 'talent_language',
+                    'talent_gender', 'talent_vendor', 'talent_age_range', 'talent_average_rating', 'total_comments')
     search_fields = ['client__username', 'client__name', 'talent__welo_id', 'talent__vendor__name']
 
     class Media:

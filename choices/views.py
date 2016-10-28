@@ -93,6 +93,7 @@ def add_comment(request):
                     talent=selection.talent,
                     defaults={'rating': form.cleaned_data['rating']}
                 )
+                selection.talent.save()
 
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'), {
                 'selection': selection,
