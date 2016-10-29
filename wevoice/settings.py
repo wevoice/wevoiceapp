@@ -9,10 +9,11 @@ SECRET_KEY = 'i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if os.environ.get('LOCAL_MACHINE'):
-    DEBUG = False
-
+    DEBUG = True
 else:
     DEBUG = False
+
+TOOLBAR = False
 
 # Application definition
 INSTALLED_APPS = (
@@ -27,7 +28,7 @@ INSTALLED_APPS = (
     'django_cleanup'
 )
 
-if os.environ.get('LOCAL_MACHINE'):
+if os.environ.get('LOCAL_MACHINE') and TOOLBAR:
     INSTALLED_APPS += ('debug_toolbar',)
 
 MIDDLEWARE_CLASSES = (
@@ -41,7 +42,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
 )
 
-if os.environ.get('LOCAL_MACHINE'):
+if os.environ.get('LOCAL_MACHINE') and TOOLBAR:
     MIDDLEWARE_CLASSES = ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE_CLASSES
 
 

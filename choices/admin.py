@@ -113,10 +113,16 @@ class InReviewFilter(admin.SimpleListFilter):
 class PreapprovedFilter(admin.SimpleListFilter):
     title = 'times preapproved'
     parameter_name = 'preapproved'
+    related_filter_parameters = ['approved', 'rejected']
 
     def lookups(self, request, model_admin):
-        preapproved = model_admin.model.objects.filter(selection__status="PREAPPROVED").annotate(num_preapproved=Count('pk'))
-        preapproved_counts = preapproved.order_by().values_list('num_preapproved', flat=True).distinct()
+        queryset = model_admin.get_queryset(request)
+        queryset = queryset.filter(selection__status="PREAPPROVED").annotate(num_preapproved=Count('pk'))
+        for parameter in self.related_filter_parameters:
+            if parameter in request.GET:
+                subqueryset = queryset.filter(selection__status=parameter.upper()).annotate(num_toexclude=Count('pk'))
+                queryset = queryset.exclude(id__in=subqueryset.filter(num_toexclude=request.GET[parameter]))
+        preapproved_counts = queryset.order_by().values_list('num_preapproved', flat=True).distinct()
         tuple_set = ()
         for number in sorted(preapproved_counts):
             tuple_set += ((number, str(number)),)
@@ -125,20 +131,26 @@ class PreapprovedFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value():
-            approved = queryset.filter(selection__status="PREAPPROVED").annotate(num_preapproved=Count('pk'))
-            qs = approved.filter(num_preapproved=self.value())
-            return qs
+            queryset = self.process_queryset(request, queryset)
+            return queryset
         else:
             return queryset
+
+    def process_queryset(self, request, queryset):
+        queryset = queryset.filter(selection__status=self.parameter_name.upper()).annotate(number_in_set=Count('pk'))
+        queryset = queryset.filter(number_in_set=int(self.value()))
+        return queryset
 
 
 class ApprovedFilter(admin.SimpleListFilter):
     title = 'times accepted'
     parameter_name = 'approved'
+    related_filter_parameters = ['approved', 'rejected']
 
     def lookups(self, request, model_admin):
-        approved = model_admin.model.objects.filter(selection__status="APPROVED").annotate(num_approved=Count('pk'))
-        approved_counts = approved.order_by().values_list('num_approved', flat=True).distinct()
+        queryset = model_admin.get_queryset(request)
+        queryset = queryset.filter(selection__status="APPROVED").annotate(num_approved=Count('pk'))
+        approved_counts = queryset.order_by().values_list('num_approved', flat=True).distinct()
         tuple_set = ()
         for number in sorted(approved_counts):
             tuple_set += ((number, str(number)),)
@@ -147,20 +159,29 @@ class ApprovedFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value():
-            approved = queryset.filter(selection__status="APPROVED").annotate(num_approved=Count('pk'))
-            qs = approved.filter(num_approved=self.value())
-            return qs
+            queryset = self.process_queryset(request, self.parameter_name, queryset)
+            return queryset
         else:
             return queryset
+
+    def process_queryset(self, request, parameter, queryset):
+        if hasattr(queryset[0],'num_rejected'):
+            qs = queryset.filter(id__in=queryset.filter(selection__status="REJECTED"))
+        else:
+            qs = queryset.filter(selection__status=parameter.upper()).annotate(num_accepted=Count('pk'))
+            qs = qs.filter(num_accepted=int(request.GET[parameter]))
+        return qs
 
 
 class RejectedFilter(admin.SimpleListFilter):
     title = 'times rejected'
     parameter_name = 'rejected'
+    related_filter_parameters = ['approved', 'rejected']
 
     def lookups(self, request, model_admin):
-        rejected = model_admin.model.objects.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
-        rejected_counts = rejected.order_by().values_list('num_rejected', flat=True).distinct()
+        queryset = model_admin.get_queryset(request)
+        queryset = queryset.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
+        rejected_counts = queryset.order_by().values_list('num_rejected', flat=True).distinct()
 
         tuple_set = ()
         for number in sorted(rejected_counts):
@@ -170,11 +191,22 @@ class RejectedFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value():
-            rejected = queryset.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
-            qs = rejected.filter(num_rejected=self.value())
-            return qs
+            queryset = self.process_queryset(request, self.parameter_name, queryset)
+            return queryset
         else:
             return queryset
+
+    @staticmethod
+    def process_queryset(self, request, parameter, queryset):
+        if hasattr(queryset[0], 'num_accepted'):
+            qs = queryset.filter(id__in=queryset
+                                 .filter(selection__status="REJECTED")
+                                 .annotate(rejected_count=Count('selection__status'))
+                                 .filter(rejected_count=3))
+        else:
+            qs = queryset.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
+            qs = qs.filter(num_rejected=int(request.GET[parameter]))
+        return qs
 
 
 class RatingInline(admin.StackedInline):
