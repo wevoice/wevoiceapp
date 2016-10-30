@@ -8,6 +8,7 @@ from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.forms import Textarea
 from django.db import models as dbmodels
 from django.db.models import Count, Q
+from choices.models import Talent
 
 
 class UserProfileInline(admin.StackedInline):
@@ -110,109 +111,64 @@ class InReviewFilter(admin.SimpleListFilter):
         return queryset
 
 
-class PreapprovedFilter(admin.SimpleListFilter):
-    title = 'times preapproved'
-    parameter_name = 'preapproved'
-    related_filter_parameters = ['approved', 'rejected']
-
-    def lookups(self, request, model_admin):
-        queryset = model_admin.get_queryset(request)
-        queryset = queryset.filter(selection__status="PREAPPROVED").annotate(num_preapproved=Count('pk'))
-        for parameter in self.related_filter_parameters:
-            if parameter in request.GET:
-                subqueryset = queryset.filter(selection__status=parameter.upper()).annotate(num_toexclude=Count('pk'))
-                queryset = queryset.exclude(id__in=subqueryset.filter(num_toexclude=request.GET[parameter]))
-        preapproved_counts = queryset.order_by().values_list('num_preapproved', flat=True).distinct()
-        tuple_set = ()
-        for number in sorted(preapproved_counts):
-            tuple_set += ((number, str(number)),)
-
-        return tuple_set
-
-    def queryset(self, request, queryset):
-        if self.value():
-            queryset = self.process_queryset(request, queryset)
-            return queryset
-        else:
-            return queryset
-
-    def process_queryset(self, request, queryset):
-        queryset = queryset.filter(selection__status=self.parameter_name.upper()).annotate(number_in_set=Count('pk'))
-        queryset = queryset.filter(number_in_set=int(self.value()))
-        return queryset
-
-
-class ApprovedFilter(admin.SimpleListFilter):
-    title = 'times accepted'
-    parameter_name = 'approved'
-    related_filter_parameters = ['approved', 'rejected']
-
-    def lookups(self, request, model_admin):
-        queryset = model_admin.get_queryset(request)
-        queryset = queryset.filter(selection__status="APPROVED").annotate(num_approved=Count('pk'))
-        approved_counts = queryset.order_by().values_list('num_approved', flat=True).distinct()
-        tuple_set = ()
-        for number in sorted(approved_counts):
-            tuple_set += ((number, str(number)),)
-
-        return tuple_set
-
-    def queryset(self, request, queryset):
-        if self.value():
-            queryset = self.process_queryset(request, self.parameter_name, queryset)
-            return queryset
-        else:
-            return queryset
-
-    def process_queryset(self, request, parameter, queryset):
-        if hasattr(queryset[0],'num_rejected'):
-            qs = queryset.filter(id__in=queryset.filter(selection__status="REJECTED"))
-        else:
-            qs = queryset.filter(selection__status=parameter.upper()).annotate(num_accepted=Count('pk'))
-            qs = qs.filter(num_accepted=int(request.GET[parameter]))
-        return qs
-
-
-class RejectedFilter(admin.SimpleListFilter):
-    title = 'times rejected'
-    parameter_name = 'rejected'
-    related_filter_parameters = ['approved', 'rejected']
-
-    def lookups(self, request, model_admin):
-        queryset = model_admin.get_queryset(request)
-        queryset = queryset.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
-        rejected_counts = queryset.order_by().values_list('num_rejected', flat=True).distinct()
-
-        tuple_set = ()
-        for number in sorted(rejected_counts):
-            tuple_set += ((number, str(number)),)
-
-        return tuple_set
-
-    def queryset(self, request, queryset):
-        if self.value():
-            queryset = self.process_queryset(request, self.parameter_name, queryset)
-            return queryset
-        else:
-            return queryset
-
-    @staticmethod
-    def process_queryset(self, request, parameter, queryset):
-        if hasattr(queryset[0], 'num_accepted'):
-            qs = queryset.filter(id__in=queryset
-                                 .filter(selection__status="REJECTED")
-                                 .annotate(rejected_count=Count('selection__status'))
-                                 .filter(rejected_count=3))
-        else:
-            qs = queryset.filter(selection__status="REJECTED").annotate(num_rejected=Count('pk'))
-            qs = qs.filter(num_rejected=int(request.GET[parameter]))
-        return qs
-
-
 class RatingInline(admin.StackedInline):
     model = models.Rating
     readonly_fields = ('rater', 'talent', 'rating')
     extra = 0
+
+
+class StatusFilter(admin.SimpleListFilter):
+    title = ''
+    parameter_name = ''
+
+    def filter_lookups_queryset(self, request, qs):
+        target_params = ('gender__exact', 'type__exact', 'age_range__exact', 'average_rating', 'vendor__id__exact',
+                         'language__id__exact')
+        initial_attrs = dict([(param, val) for param, val in request.GET.iteritems() if param in target_params and val])
+        qs = qs.filter(**initial_attrs)
+        status_attrs = dict([('selection__status', self.parameter_name.upper())])
+        qs = qs.filter(**status_attrs).annotate(obj_count=Count('pk'))
+        return qs
+
+    def lookups(self, request, model_admin):
+        qs = self.filter_lookups_queryset(request, model_admin.get_queryset(request))
+        tuple_set = ()
+        for number in sorted(qs.order_by().values_list('obj_count', flat=True).distinct()):
+            tuple_set += ((number, str(number)),)
+        return tuple_set
+
+    def queryset(self, request, queryset):
+        if self.value():
+            qs = self.process_queryset(request, queryset)
+            return qs
+        else:
+            return queryset
+
+    def process_queryset(self, request, queryset):
+        if hasattr(queryset[0], 'status_count'):
+            qs = queryset.filter(id__in=Talent.objects
+                                 .filter(selection__status=self.parameter_name.upper())
+                                 .annotate(status_count=Count('selection__status'))
+                                 .filter(status_count=int(request.GET[self.parameter_name])))
+        else:
+            qs = queryset.filter(selection__status=self.parameter_name.upper()).annotate(status_count=Count('pk'))
+            qs = qs.filter(status_count=int(request.GET[self.parameter_name]))
+        return qs
+
+
+class PreapprovedFilter(StatusFilter):
+    title = 'times preapproved'
+    parameter_name = 'preapproved'
+
+
+class ApprovedFilter(StatusFilter):
+    title = 'times accepted'
+    parameter_name = 'approved'
+
+
+class RejectedFilter(StatusFilter):
+    title = 'times rejected'
+    parameter_name = 'rejected'
 
 
 class TalentAdmin(admin.ModelAdmin):
@@ -236,7 +192,7 @@ class TalentAdmin(admin.ModelAdmin):
                    PreapprovedFilter,
                    ApprovedFilter,
                    RejectedFilter,
-                   'vendor',
+                   ('vendor', admin.RelatedOnlyFieldListFilter),
                    ('language', admin.RelatedOnlyFieldListFilter))
     list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range',
                     'average_rating', 'get_times_preapproved', 'get_times_accepted', 'get_times_rejected')
