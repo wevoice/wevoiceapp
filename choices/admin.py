@@ -128,6 +128,15 @@ class StatusFilter(admin.SimpleListFilter):
         qs = qs.filter(**initial_attrs)
         status_attrs = dict([('selection__status', self.parameter_name.upper())])
         qs = qs.filter(**status_attrs).annotate(obj_count=Count('pk'))
+        status_params = ('preapproved', 'approved', 'rejected')
+        extra_status_attrs = [(param, val) for param, val in request.GET.iteritems()
+                              if param in status_params and val and param != self.parameter_name]
+        if len(extra_status_attrs) > 0:
+            for item in extra_status_attrs:
+                qs = qs.filter(id__in=Talent.objects
+                               .filter(selection__status=item[0].upper())
+                               .annotate(status_count=Count('selection__status'))
+                               .filter(status_count=int(int(item[1]))))
         return qs
 
     def lookups(self, request, model_admin):
