@@ -16,17 +16,35 @@ from django.contrib.admin.utils import reverse_field_path
 # FILTERS #
 
 
-def filter_lookups_queryset(request, qs, parameter_name=None):
+def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None):
     target_params = ('gender__exact', 'type__exact', 'age_range__exact', 'average_rating', 'vendor__id__exact',
-                     'language__id__exact')
-    initial_attrs = dict([(param, val) for param, val in request.GET.iteritems() if param in target_params and val])
+                     'language__id__exact', 'talent__language__id__exact', 'talent__vendor__id__exact',
+                     'client__id__exact', 'status__exact', 'talent__gender__exact')
+
+    # Filter lookup queryset for all target_params in request.GET params, except for param of request initiator itself
+    if lookup_kwarg:
+        initial_attrs = dict([(param, val) for param, val in request.GET.iteritems()
+                              if param in target_params and val and param != lookup_kwarg])
+    else:
+        initial_attrs = dict([(param, val) for param, val in request.GET.iteritems()
+                              if param in target_params and val and param])
     qs = qs.filter(**initial_attrs)
+
+    if parameter_name != "under_review" and "under_review" in request.GET:
+        if request.GET["under_review"] == "0":
+            qs = qs.exclude(
+                Q(selection__status="REJECTED") |
+                Q(selection__status="APPROVED") |
+                Q(selection__status="PREAPPROVED")
+            )
+
+    # Filter lookup queryset for each of 3 selection status params, omitting that param if initiated by one of the 3.
     status_params = ('preapproved', 'approved', 'rejected')
-    if parameter_name:
+    if parameter_name and parameter_name in status_params:
         status_attrs = dict([('selection__status', parameter_name.upper())])
         qs = qs.filter(**status_attrs).annotate(obj_count=Count('pk'))
         extra_status_attrs = [(param, val) for param, val in request.GET.iteritems()
-                              if param in status_params and val and param != parameter_name]
+                              if param in status_params and param != parameter_name and val]
     else:
         extra_status_attrs = [(param, val) for param, val in request.GET.iteritems()
                               if param in status_params and val]
@@ -41,12 +59,12 @@ def filter_lookups_queryset(request, qs, parameter_name=None):
 
 class InReviewFilter(admin.SimpleListFilter):
     parameter_name = 'under_review'
-    title = 'in review'
+    title = 'under review'
     YES, NO = 1, 0
 
     def lookups(self, request, model_admin):
         queryset = model_admin.get_queryset(request)
-        queryset = filter_lookups_queryset(request, queryset)
+        queryset = filter_lookups_queryset(request, queryset, parameter_name=self.parameter_name)
 
         yes_test = queryset.filter(
             Q(selection__status="REJECTED") |
@@ -138,14 +156,13 @@ class FilteredChoicesFieldListFilter(admin.FieldListFilter):
         self.lookup_kwarg_isnull = '%s__isnull' % field_path
         self.lookup_val = request.GET.get(self.lookup_kwarg)
         self.lookup_val_isnull = request.GET.get(self.lookup_kwarg_isnull)
-        queryset = model_admin.get_queryset(request)
         # Obey parent ModelAdmin queryset when deciding which options to show
         parent_model, reverse_path = reverse_field_path(model, field_path)
         if model == parent_model:
             queryset = model_admin.get_queryset(request)
         else:
             queryset = parent_model._default_manager.all()
-        queryset = filter_lookups_queryset(request, queryset)
+        queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
         self.lookup_choices = (queryset
                                .distinct()
                                .order_by(field.name)
@@ -202,7 +219,7 @@ class FilteredAllValuesFieldListFilter(admin.FieldListFilter):
             queryset = model_admin.get_queryset(request)
         else:
             queryset = parent_model._default_manager.all()
-        queryset = filter_lookups_queryset(request, queryset)
+        queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
         self.lookup_choices = (queryset
                                .distinct()
                                .order_by(field.name)
@@ -246,13 +263,14 @@ admin.FieldListFilter.register(lambda f: True, FilteredAllValuesFieldListFilter)
 class FilteredRelatedOnlyFieldListFilter(admin.RelatedFieldListFilter):
     def field_choices(self, field, request, model_admin):
         queryset = model_admin.get_queryset(request)
-        queryset = filter_lookups_queryset(request, queryset)
+        lookup_kwarg = "%s__id__exact" % self.field_path
+        queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=lookup_kwarg)
         pk_qs = queryset.distinct().values_list('%s__pk' % self.field_path, flat=True)
         return field.get_choices(include_blank=False, limit_choices_to={'pk__in': pk_qs})
 
 
 class CommentsCountFilter(admin.SimpleListFilter):
-    parameter_name = 'is_commented'
+    parameter_name = 'comment_count'
     title = 'Has Comments'
     YES, NO = 1, 0
 
@@ -425,10 +443,10 @@ class CommentInline(admin.StackedInline):
 class SelectionAdmin(admin.ModelAdmin):
     inlines = [CommentInline]
     list_filter = (
-        'status',
+        ('status', FilteredChoicesFieldListFilter),
         'talent__gender',
         CommentsCountFilter,
-        ('talent__average_rating', FilteredAllValuesFieldListFilter),
+        'talent__average_rating',
         ('client', FilteredRelatedOnlyFieldListFilter),
         ('talent__vendor', FilteredRelatedOnlyFieldListFilter),
         ('talent__language', FilteredRelatedOnlyFieldListFilter)
