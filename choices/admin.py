@@ -38,6 +38,13 @@ def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None)
                 Q(selection__status="PREAPPROVED")
             )
 
+    if parameter_name != "comment_count" and "comment_comment" in request.GET:
+        queryset.annotate(comment_count=Count('comments'))
+        if request.GET["comment_count"] == "1":
+            qs = qs.filter(comment_count__gte=1)
+        elif request.GET["comment_count"] == "0":
+            qs = qs.filter(comment_count__lt=1)
+
     # Filter lookup queryset for each of 3 selection status params, omitting that param if initiated by one of the 3.
     status_params = ('preapproved', 'approved', 'rejected')
     if parameter_name and parameter_name in status_params:
@@ -276,7 +283,7 @@ class CommentsCountFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         queryset = model_admin.get_queryset(request)
-        queryset = filter_lookups_queryset(request, queryset)
+        queryset = filter_lookups_queryset(request, queryset, parameter_name=self.parameter_name)
         queryset = queryset.annotate(comment_count=Count('comments'))
 
         yes_test = queryset.filter(comment_count__gte=1)
@@ -292,7 +299,7 @@ class CommentsCountFilter(admin.SimpleListFilter):
         return prompts
 
     def queryset(self, request, queryset):
-        queryset = filter_lookups_queryset(request, queryset)
+        queryset = filter_lookups_queryset(request, queryset, parameter_name=self.parameter_name)
         qs = queryset.annotate(comment_count=Count('comments'))
 
         if self.value() and int(self.value()) == self.YES:
@@ -444,6 +451,7 @@ class SelectionAdmin(admin.ModelAdmin):
     inlines = [CommentInline]
     list_filter = (
         ('status', FilteredChoicesFieldListFilter),
+        # ('talent__gender', FilteredChoicesFieldListFilter),
         'talent__gender',
         CommentsCountFilter,
         'talent__average_rating',
