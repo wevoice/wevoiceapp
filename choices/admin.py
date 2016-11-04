@@ -67,13 +67,7 @@ def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None)
 
 def filter_lookups_related_queryset(request, qs, parameter_name=None, lookup_kwarg=None):
     target_params = ['talent__gender__exact', 'talent__language__id__exact', 'client__id__exact',
-                     'talent__vendor__id__exact']
-    # if lookup_kwarg:
-    #     initial_attrs = dict([(param, val) for param, val in request.GET.iteritems()
-    #                           if param in target_params and val and param != lookup_kwarg])
-    # else:
-    #     initial_attrs = dict([(param, val) for param, val in request.GET.iteritems()
-    #                           if param in target_params and val and param])
+                     'talent__vendor__id__exact', 'status__exact']
 
     initial_attrs = {}
 
@@ -84,10 +78,8 @@ def filter_lookups_related_queryset(request, qs, parameter_name=None, lookup_kwa
                     param = string.replace(param, 'client', 'selection__client')
                 elif param.split('__')[0] == 'talent':
                     param = string.replace(param, 'talent', 'selection__talent')
-                elif param.split('__')[0] == 'vendor':
-                    param = string.replace(param, 'vendor', 'selection__vendor')
-                elif param.split('__')[0] == 'gender':
-                    param = string.replace(key, 'gender', 'selection__gender')
+                elif param.split('__')[0] == 'status':
+                    param = string.replace(param, 'status', 'selection__status')
                 initial_attrs[param] = val
     else:
         for param, val in request.GET.iteritems():
@@ -96,10 +88,8 @@ def filter_lookups_related_queryset(request, qs, parameter_name=None, lookup_kwa
                     param = string.replace(param, 'client', 'selection__client')
                 elif param.split('__')[0] == 'talent':
                     param = string.replace(param, 'talent', 'selection__talent')
-                elif param.split('__')[0] == 'vendor':
-                    param = string.replace(param, 'vendor', 'selection__vendor')
-                elif param.split('__')[0] == 'gender':
-                    param = string.replace(key, 'gender', 'selection__gender')
+                elif param.split('__')[0] == 'status':
+                    param = string.replace(param, 'status', 'selection__status')
                 initial_attrs[param] = val
 
     qs = qs.filter(**initial_attrs)
@@ -213,7 +203,6 @@ class FilteredChoicesFieldListFilter(admin.FieldListFilter):
         else:
             queryset = parent_model._default_manager.all()
         if field_path == "talent__gender":
-
             queryset = filter_lookups_related_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
         else:
             queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
