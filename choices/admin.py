@@ -20,7 +20,7 @@ import string
 def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None):
     target_params = ('gender__exact', 'type__exact', 'age_range__exact', 'average_rating', 'vendor__id__exact',
                      'language__id__exact', 'talent__language__id__exact', 'talent__vendor__id__exact',
-                     'client__id__exact', 'status__exact', 'talent__gender__exact')
+                     'client__id__exact', 'status__exact', 'talent__gender__exact', 'talent__average_rating')
 
     # Filter lookup queryset for all target_params in request.GET params, except for param of request initiator itself
     if lookup_kwarg:
@@ -67,7 +67,7 @@ def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None)
 
 def filter_lookups_related_queryset(request, qs, parameter_name=None, lookup_kwarg=None):
     target_params = ['talent__gender__exact', 'talent__language__id__exact', 'client__id__exact',
-                     'talent__vendor__id__exact', 'status__exact']
+                     'talent__vendor__id__exact', 'status__exact', 'talent__average_rating']
 
     initial_attrs = {}
 
@@ -264,8 +264,9 @@ class FilteredAllValuesFieldListFilter(admin.FieldListFilter):
         else:
             queryset = parent_model._default_manager.all()
         if self.lookup_kwarg == 'talent__average_rating':
-            queryset = parent_model._default_manager.all()
-        queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
+            queryset = filter_lookups_related_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
+        else:
+            queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
         self.lookup_choices = (queryset
                                .distinct()
                                .order_by(field.name)
@@ -500,11 +501,10 @@ class SelectionAdmin(admin.ModelAdmin):
     inlines = [CommentInline]
     list_filter = (
         ('status', FilteredChoicesFieldListFilter),
-        # ('talent__gender', admin.ChoicesFieldListFilter),
         ('talent__gender', FilteredChoicesFieldListFilter),
         CommentsCountFilter,
-        # ('talent__average_rating', FilteredAllValuesFieldListFilter),
-        'talent__average_rating',
+        ('talent__average_rating', FilteredAllValuesFieldListFilter),
+        # 'talent__average_rating',
         ('client', FilteredRelatedOnlyFieldListFilter),
         ('talent__vendor', FilteredRelatedOnlyFieldListFilter),
         ('talent__language', FilteredRelatedOnlyFieldListFilter)
