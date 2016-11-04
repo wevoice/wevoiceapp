@@ -21,7 +21,7 @@ def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None)
     target_params = ('rating', 'gender__exact', 'type__exact', 'age_range__exact', 'average_rating',
                      'vendor__id__exact', 'language__id__exact', 'talent__language__id__exact',
                      'talent__vendor__id__exact', 'client__id__exact', 'status__exact', 'talent__gender__exact',
-                     'talent__average_rating')
+                     'talent__average_rating', 'author__client__id__exact', 'author__id__exact')
 
     # Filter lookup queryset for all target_params in request.GET params, except for param of request initiator itself
     if lookup_kwarg:
@@ -530,9 +530,8 @@ admin.site.register(models.Selection, SelectionAdmin)
 
 
 class CommentAdmin(admin.ModelAdmin):
-    list_filter = (('selection__client', admin.RelatedOnlyFieldListFilter),
-                   ('author', admin.RelatedOnlyFieldListFilter)
-                   )
+    list_filter = (('author__client', FilteredRelatedOnlyFieldListFilter),
+                   ('author', FilteredRelatedOnlyFieldListFilter))
     list_display = ('selection', 'author', 'text', 'comment_client', 'created_date')
     search_fields = ['text', 'author__user__username', 'author__client__username', 'selection__talent__welo_id']
 admin.site.register(models.Comment, CommentAdmin)
