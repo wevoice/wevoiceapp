@@ -78,6 +78,15 @@ DATABASES = {
         'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"},
         'PORT': ''
     },
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': 'wevoicerelnewbranch',
+    #     'USER': 'root',
+    #     'PASSWORD': 'root',
+    #     'HOST': 'localhost',
+    #     'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"},
+    #     'PORT': ''
+    # },
     'legacy': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'wevoice2',

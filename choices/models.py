@@ -61,7 +61,7 @@ class Rating(models.Model):
         unique_together = ('talent', 'rater',)
 
     def __str__(self):
-        return str(self.pk)
+        return str(self.rating)
 
 
 class Talent(models.Model):

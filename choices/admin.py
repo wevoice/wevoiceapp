@@ -12,6 +12,7 @@ from choices.models import Talent
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_text, smart_text
 from django.contrib.admin.utils import reverse_field_path
+import string
 
 # FILTERS #
 
@@ -38,12 +39,12 @@ def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None)
                 Q(selection__status="PREAPPROVED")
             )
 
-    if parameter_name != "comment_count" and "comment_comment" in request.GET:
-        queryset.annotate(comment_count=Count('comments'))
+    if parameter_name != "comment_count" and "comment_count" in request.GET:
+        qs = qs.annotate(comment_count=Count('comments'))
+        if request.GET["comment_count"] == "0":
+            qs = qs.filter(comment_count__lt=1)
         if request.GET["comment_count"] == "1":
             qs = qs.filter(comment_count__gte=1)
-        elif request.GET["comment_count"] == "0":
-            qs = qs.filter(comment_count__lt=1)
 
     # Filter lookup queryset for each of 3 selection status params, omitting that param if initiated by one of the 3.
     status_params = ('preapproved', 'approved', 'rejected')
@@ -61,6 +62,48 @@ def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None)
                            .filter(selection__status=item[0].upper())
                            .annotate(status_count=Count('selection__status'))
                            .filter(status_count=int(int(item[1]))))
+    return qs
+
+
+def filter_lookups_related_queryset(request, qs, parameter_name=None, lookup_kwarg=None):
+    target_params = ['talent__gender__exact', 'talent__language__id__exact', 'client__id__exact',
+                     'talent__vendor__id__exact']
+    # if lookup_kwarg:
+    #     initial_attrs = dict([(param, val) for param, val in request.GET.iteritems()
+    #                           if param in target_params and val and param != lookup_kwarg])
+    # else:
+    #     initial_attrs = dict([(param, val) for param, val in request.GET.iteritems()
+    #                           if param in target_params and val and param])
+
+    initial_attrs = {}
+
+    if lookup_kwarg:
+        for param, val in request.GET.iteritems():
+            if param in target_params and param != lookup_kwarg and val:
+                if param.split('__')[0] == 'client':
+                    param = string.replace(param, 'client', 'selection__client')
+                elif param.split('__')[0] == 'talent':
+                    param = string.replace(param, 'talent', 'selection__talent')
+                elif param.split('__')[0] == 'vendor':
+                    param = string.replace(param, 'vendor', 'selection__vendor')
+                elif param.split('__')[0] == 'gender':
+                    param = string.replace(key, 'gender', 'selection__gender')
+                initial_attrs[param] = val
+    else:
+        for param, val in request.GET.iteritems():
+            if param in target_params and val:
+                if param.split('__')[0] == 'client':
+                    param = string.replace(param, 'client', 'selection__client')
+                elif param.split('__')[0] == 'talent':
+                    param = string.replace(param, 'talent', 'selection__talent')
+                elif param.split('__')[0] == 'vendor':
+                    param = string.replace(param, 'vendor', 'selection__vendor')
+                elif param.split('__')[0] == 'gender':
+                    param = string.replace(key, 'gender', 'selection__gender')
+                initial_attrs[param] = val
+
+    qs = qs.filter(**initial_attrs)
+
     return qs
 
 
@@ -169,7 +212,12 @@ class FilteredChoicesFieldListFilter(admin.FieldListFilter):
             queryset = model_admin.get_queryset(request)
         else:
             queryset = parent_model._default_manager.all()
-        queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
+        if field_path == "talent__gender":
+
+            queryset = filter_lookups_related_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
+        else:
+            queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
+
         self.lookup_choices = (queryset
                                .distinct()
                                .order_by(field.name)
@@ -226,6 +274,8 @@ class FilteredAllValuesFieldListFilter(admin.FieldListFilter):
             queryset = model_admin.get_queryset(request)
         else:
             queryset = parent_model._default_manager.all()
+        if self.lookup_kwarg == 'talent__average_rating':
+            queryset = parent_model._default_manager.all()
         queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=self.lookup_kwarg)
         self.lookup_choices = (queryset
                                .distinct()
@@ -273,7 +323,17 @@ class FilteredRelatedOnlyFieldListFilter(admin.RelatedFieldListFilter):
         lookup_kwarg = "%s__id__exact" % self.field_path
         queryset = filter_lookups_queryset(request, queryset, lookup_kwarg=lookup_kwarg)
         pk_qs = queryset.distinct().values_list('%s__pk' % self.field_path, flat=True)
-        return field.get_choices(include_blank=False, limit_choices_to={'pk__in': pk_qs})
+        field_choices = field.get_choices(include_blank=False, limit_choices_to={'pk__in': pk_qs})
+        return field_choices
+
+    @property
+    def include_empty_choice(self):
+        """
+        Return True if a "(None)" choice should be included, which filters
+        out everything except empty relationships.
+        """
+        return self.field.null or (self.field.is_relation and self.field.many_to_many)\
+            or (self.field_path == 'client' and self.field.name == 'client')
 
 
 class CommentsCountFilter(admin.SimpleListFilter):
@@ -451,9 +511,10 @@ class SelectionAdmin(admin.ModelAdmin):
     inlines = [CommentInline]
     list_filter = (
         ('status', FilteredChoicesFieldListFilter),
-        # ('talent__gender', FilteredChoicesFieldListFilter),
-        'talent__gender',
+        # ('talent__gender', admin.ChoicesFieldListFilter),
+        ('talent__gender', FilteredChoicesFieldListFilter),
         CommentsCountFilter,
+        # ('talent__average_rating', FilteredAllValuesFieldListFilter),
         'talent__average_rating',
         ('client', FilteredRelatedOnlyFieldListFilter),
         ('talent__vendor', FilteredRelatedOnlyFieldListFilter),
