@@ -18,7 +18,7 @@ import string
 
 
 def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None):
-    target_params = ('rating', 'gender__exact', 'type__exact', 'age_range__exact', 'average_rating',
+    target_params = ('rating', 'rater__id__exact', 'gender__exact', 'type__exact', 'age_range__exact', 'average_rating',
                      'vendor__id__exact', 'language__id__exact', 'talent__language__id__exact',
                      'talent__vendor__id__exact', 'client__id__exact', 'status__exact', 'talent__gender__exact',
                      'talent__average_rating', 'author__client__id__exact', 'author__id__exact')
@@ -431,7 +431,10 @@ class AudioFileAdminForm(forms.ModelForm):
 
 class RatingAdmin(admin.ModelAdmin):
     list_display = ('id', 'rating', 'talent', 'rater')
-    list_filter = ('rating', ('rater', FilteredRelatedOnlyFieldListFilter))
+    list_filter = (
+        ('rating', FilteredAllValuesFieldListFilter),
+        ('rater', FilteredRelatedOnlyFieldListFilter)
+    )
     search_fields = ('talent__welo_id',)
 admin.site.register(models.Rating, RatingAdmin)
 
@@ -505,7 +508,6 @@ class SelectionAdmin(admin.ModelAdmin):
         ('talent__gender', FilteredChoicesFieldListFilter),
         CommentsCountFilter,
         ('talent__average_rating', FilteredAllValuesFieldListFilter),
-        # 'talent__average_rating',
         ('client', FilteredRelatedOnlyFieldListFilter),
         ('talent__vendor', FilteredRelatedOnlyFieldListFilter),
         ('talent__language', FilteredRelatedOnlyFieldListFilter)
