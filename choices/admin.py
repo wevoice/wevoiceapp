@@ -18,9 +18,10 @@ import string
 
 
 def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None):
-    target_params = ('rating', 'gender__exact', 'type__exact', 'age_range__exact', 'average_rating', 'vendor__id__exact',
-                     'language__id__exact', 'talent__language__id__exact', 'talent__vendor__id__exact',
-                     'client__id__exact', 'status__exact', 'talent__gender__exact', 'talent__average_rating')
+    target_params = ('rating', 'gender__exact', 'type__exact', 'age_range__exact', 'average_rating',
+                     'vendor__id__exact', 'language__id__exact', 'talent__language__id__exact',
+                     'talent__vendor__id__exact', 'client__id__exact', 'status__exact', 'talent__gender__exact',
+                     'talent__average_rating')
 
     # Filter lookup queryset for all target_params in request.GET params, except for param of request initiator itself
     if lookup_kwarg:
@@ -65,7 +66,7 @@ def filter_lookups_queryset(request, qs, parameter_name=None, lookup_kwarg=None)
     return qs
 
 
-def filter_lookups_related_queryset(request, qs, parameter_name=None, lookup_kwarg=None):
+def filter_lookups_related_queryset(request, qs, lookup_kwarg=None):
     target_params = ['talent__gender__exact', 'talent__language__id__exact', 'client__id__exact',
                      'talent__vendor__id__exact', 'status__exact', 'talent__average_rating']
 
