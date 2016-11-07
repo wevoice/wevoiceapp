@@ -7,7 +7,7 @@
         <form action="" method="post" autocomplete="off">{% csrf_token %}
             <table width="296" class="signintable">
               <tr>
-                <td><img src="{% static "wevoicelogo.jpg" %}" width="296" height="74" alt=""/></td>
+                <td><img src="{% static "voiceoverlogo.png" %}" width="350" height="74" alt=""/></td>
               </tr>
               <tr>
                 <td><img src="{% static "signin.jpg" %}" width="216" height="51" alt=""/></td>
@@ -21,7 +21,7 @@
                 </tr>
               {% endif %}
               <tr>
-                <td style="text-align:left">Username</td>
+                <td style="padding:0 0 5px 28px;text-align:left">Username</td>
               </tr>
               <tr>
                 <td>{{ form.username }}</td>
@@ -37,7 +37,7 @@
                 <td><img src="{% static "space.png" %}" width="1" height="1" alt=""/></td>
               </tr>
               <tr>
-                <td style="text-align:left">Password</td>
+                <td style="padding:0 0 5px 28px;text-align:left">Password</td>
               </tr>
               <tr>
                 <td>{{ form.password }}</td>
