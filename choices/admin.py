@@ -16,8 +16,15 @@ class UserProfileInline(admin.StackedInline):
 
 
 class UserAdmin(AuthUserAdmin):
-    list_display = ('id', 'username', 'first_name', 'last_name', 'is_active', 'is_superuser', 'email')
+    list_display = ('id', 'username', 'client_or_vendor', 'first_name', 'last_name', 'email', 'is_active',
+                    'is_superuser')
     list_display_links = ('id', 'username')
+
+    def client_or_vendor(self, obj):
+        if obj.userprofile.client:
+            return "Client: %s" % obj.userprofile.client.username
+        elif obj.userprofile.vendor:
+            return "Vendor: %s" % obj.userprofile.vendor.username
 
     def add_view(self, *args, **kwargs):
         self.inlines = []
