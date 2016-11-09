@@ -22,9 +22,9 @@ class UserAdmin(AuthUserAdmin):
 
     def client_or_vendor(self, obj):
         if obj.userprofile.client:
-            return "Client: %s" % obj.userprofile.client.username
+            return "Client: %s" % obj.userprofile.client.name
         elif obj.userprofile.vendor:
-            return "Vendor: %s" % obj.userprofile.vendor.username
+            return "Vendor: %s" % obj.userprofile.vendor.name
 
     def add_view(self, *args, **kwargs):
         self.inlines = []
