@@ -12,7 +12,7 @@
 <tr>
     <td class='talent_comment_table'>{{ selection.talent.welo_id }}</td>
     <td class='talent_comment_table'>
-        {% if comment.author.id == user.userprofile.id or user.is_superuser %}
+        {% if comment.author.id == user.id or user.is_superuser %}
             <form method="POST" action="{% url 'delete_comment' %}" >
                 {% csrf_token %}
                 <input name='comment_id' type='hidden' value='{{ comment.id }}'>
@@ -39,7 +39,7 @@
                     </td>
                     <td colspan='3' class='talent_comment_submit'>
                         {% for rating in selection.talent.rating_set.all %}
-                            {% if rating.rater.id == user.userprofile.id %}
+                            {% if rating.rater.id == user.id %}
                                 Previous Rating:
                                 {% for i in 5|times %}
                                     {% if forloop.counter0 < rating.rating %}

@@ -6,6 +6,8 @@ from django.conf import settings
 from datetime import datetime
 from django.db.models import Avg
 from .validators import validate_audiofile_extension, validate_imagefile_extension
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Client(models.Model):
@@ -27,17 +29,23 @@ class Client(models.Model):
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, primary_key=True)
     client = models.ForeignKey("Client", blank=True, null=True)
     vendor = models.ForeignKey("Vendor", blank=True, null=True)
 
     def __unicode__(self):
-        if self.client:
-            return self.client.username
-        elif self.vendor:
-            return self.vendor.username
-        else:
-            return "N/A"
+        return self.user.username
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.userprofile.save()
 
 
 class Language(models.Model):
@@ -55,7 +63,7 @@ class Language(models.Model):
 class Rating(models.Model):
     rating = models.IntegerField(default=0, blank=True, null=True)
     talent = models.ForeignKey('Talent')
-    rater = models.ForeignKey(UserProfile)
+    rater = models.ForeignKey(User)
 
     class Meta:
         unique_together = ('talent', 'rater',)
@@ -224,7 +232,7 @@ class Selection(models.Model):
 
 class Comment(models.Model):
     selection = models.ForeignKey(Selection, related_name='comments')
-    author = models.ForeignKey(UserProfile)
+    author = models.ForeignKey(User)
     text = models.TextField()
     created_date = models.DateTimeField(default=timezone.now)
     approved_comment = models.BooleanField(default=False)

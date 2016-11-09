@@ -371,6 +371,7 @@ class UserProfileInline(admin.StackedInline):
 
 class UserAdmin(AuthUserAdmin):
     list_display = ('id', 'username', 'first_name', 'last_name', 'is_active', 'is_superuser', 'email')
+    list_display_links = ('id', 'username')
 
     def add_view(self, *args, **kwargs):
         self.inlines = []
@@ -532,8 +533,10 @@ admin.site.register(models.Selection, SelectionAdmin)
 
 
 class CommentAdmin(admin.ModelAdmin):
-    list_filter = (('author__client', FilteredRelatedOnlyFieldListFilter),
-                   ('author', FilteredRelatedOnlyFieldListFilter))
+    list_filter = (
+        ('author__userprofile__client', FilteredRelatedOnlyFieldListFilter),
+        ('author', FilteredRelatedOnlyFieldListFilter)
+    )
     list_display = ('selection', 'author', 'text', 'comment_client', 'created_date')
     search_fields = ['text', 'author__user__username', 'author__client__username', 'selection__talent__welo_id']
 admin.site.register(models.Comment, CommentAdmin)

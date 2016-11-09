@@ -83,13 +83,13 @@ def add_comment(request):
             client = get_object_or_404(Client, pk=form.cleaned_data['client_id'])
             selection = get_object_or_404(Selection, pk=form.cleaned_data['selection_id'])
             if form.cleaned_data['text'] != '':
-                author = request.user.userprofile
+                author = request.user
                 comment_text = form.cleaned_data['text']
                 comment = Comment(author=author, text=comment_text, selection=selection)
                 comment.save()
             if form.cleaned_data['rating'] != '':
                 Rating.objects.update_or_create(
-                    rater=request.user.userprofile,
+                    rater=request.user,
                     talent=selection.talent,
                     defaults={'rating': form.cleaned_data['rating']}
                 )
@@ -191,24 +191,25 @@ def updatedb(request):
     superclient.password = make_password("Welo!")
     superclient.save()
 
-    UserProfile.objects.create(
+    welocalize_profile = UserProfile.objects.get_or_create(
         user=User.objects.get(username='william.burton'),
-        client=superclient
     )
 
+    welocalize_profile[0].client = superclient
+    welocalize_profile[0].save()
+
     for oldadmin in OldAdmin.objects.all():
-        if oldadmin.username != 'jdeere':
-            new_superuser = User.objects.create_superuser(
-                oldadmin.username,
-                '',
-                oldadmin.password
-            )
-            new_superuser.save()
-            new_userprofile = UserProfile.objects.create(
-                user=new_superuser,
-                client=superclient
-            )
-            new_userprofile.save()
+        new_superuser = User.objects.create_superuser(
+            oldadmin.username,
+            '',
+            oldadmin.password
+        )
+        new_superuser.save()
+        new_userprofile = UserProfile.objects.get_or_create(
+            user=new_superuser,
+        )
+        new_userprofile[0].client = superclient
+        new_userprofile[0].save()
 
     for oldvendor in OldVendors.objects.all():
         create_vendor_objects(oldvendor)
@@ -379,10 +380,12 @@ def create_client_objects(oldclient):
         )
         newuser[0].password = oldclient.password
         newuser[0].save()
-        UserProfile.objects.get_or_create(
+        newprofile = UserProfile.objects.get_or_create(
             user=newuser[0],
-            client=newclient
         )
+        newprofile[0].client=newclient
+        newprofile[0].save()
+
         return newclient
     except Exception as e:
         print(e)
@@ -402,10 +405,11 @@ def create_vendor_objects(oldvendor):
         newuser.password = oldvendor.password
         newuser.is_staff = True
         newuser.save()
-        UserProfile.objects.get_or_create(
+        newprofile = UserProfile.objects.get_or_create(
             user=newuser,
-            vendor=newvendor
         )
+        newprofile[0].vendor = newvendor
+        newprofile[0].save()
         new_group, created = Group.objects.get_or_create(name='Vendors')
         can_add_talent = Permission.objects.filter(name='Can add talent')[0]
         can_change_talent = Permission.objects.filter(name='Can change talent')[0]
