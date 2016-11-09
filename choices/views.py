@@ -383,7 +383,7 @@ def create_client_objects(oldclient):
         newprofile = UserProfile.objects.get_or_create(
             user=newuser[0],
         )
-        newprofile[0].client=newclient
+        newprofile[0].client = newclient
         newprofile[0].save()
 
         return newclient

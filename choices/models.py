@@ -192,8 +192,6 @@ class Selection(models.Model):
 
     def total_comments(self):
         comments_count = self.comments.all().count()
-        if comments_count > 0:
-            test = "test"
         return comments_count
 
     total_comments.short_description = 'Total Comments'
@@ -238,7 +236,7 @@ class Comment(models.Model):
     approved_comment = models.BooleanField(default=False)
 
     def comment_client(self):
-        return self.author.client
+        return self.author.userprofile.client
     comment_client.short_description = 'Client'
 
     def approve(self):
