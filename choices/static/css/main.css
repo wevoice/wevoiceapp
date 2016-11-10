@@ -307,16 +307,6 @@ input#delete_button
 		vertical-align: middle;
 	}
 
-.image_refresh
-	{
-		vertical-align: middle;
-		background:url(../comment_refresh1.png) no-repeat;
-    	width: 16px;
-    	height: 16px;
-    	border: none;
-
-	}
-
 .talent_admin_table
 	{
 		font-size:9px;
