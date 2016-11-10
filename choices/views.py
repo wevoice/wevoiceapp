@@ -159,7 +159,7 @@ def get_selections(client, status):
     status_filter = None
     if status in ['for_approval', 'accepted', 'rejected']:
         status_filter = status_filter_dict[status]
-    all_selections = client.selection_set.filter(status=status_filter).order_by('talent__language')
+    all_selections = client.selection_set.filter(status=status_filter)
     if all_selections.count() == 0:
         no_selections = True
     selection_types = []

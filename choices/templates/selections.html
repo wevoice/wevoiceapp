@@ -50,7 +50,7 @@
                                     <td class='talent_admin_table_header' width='13%'>LISTEN</td>
                                     <td class='talent_admin_table_header' width='22%'>STATUS</td>
                                 </tr>
-                                {% for selection in language.list %}
+                                {% for selection in language.list|dictsort:"talent.welo_id" %}
                                     <tr>
                                         <td class='talent_admin_table'>{{ selection.talent.welo_id|truncatechars:50 }}</td>
                                         <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
