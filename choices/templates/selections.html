@@ -52,7 +52,7 @@
                                 </tr>
                                 {% for selection in language.list|dictsort:"talent.welo_id" %}
                                     <tr>
-                                        <td class='talent_admin_table'>{{ selection.talent.welo_id|truncatechars:50 }}</td>
+                                        <td class='talent_admin_table_align_left'>{{ selection.talent.welo_id|truncatechars:50 }}</td>
                                         <td class='talent_admin_table'>{{ selection.talent.gender }}</td>
                                         <td class='talent_admin_table'>{{ selection.talent.age_range }}</td>
                                         <td class='talent_admin_table'>

@@ -325,6 +325,16 @@ input#delete_button
 		line-height:15px;
 	}
 
+.talent_admin_table_align_left
+	{
+		font-size:9px;
+		border: 1px solid #8C8984;
+		vertical-align: middle;
+		text-align: left;
+		padding-left:5px;
+		line-height:15px;
+	}
+
 .talent_comment_table
 	{
 		font-size:9px;
