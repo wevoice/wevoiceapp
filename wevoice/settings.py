@@ -132,6 +132,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 
 LOGIN_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 
 DATABASE_ROUTERS = ['legacy.router.LegacyRouter']
 

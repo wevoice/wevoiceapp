@@ -1,6 +1,7 @@
 import os
 from django.conf.urls import include, url
 from django.contrib import admin
+from django.contrib.auth.views import logout
 from django.conf import settings
 from django.conf.urls.static import static, serve
 admin.autodiscover()
@@ -8,12 +9,14 @@ admin.autodiscover()
 if settings.DEBUG:
     import debug_toolbar
     urlpatterns = [
+        url(r'^admin/logout/', include('choices.urls')),
         url(r'^admin/', include(admin.site.urls)),
         url(r'^__debug__/', include(debug_toolbar.urls)),
         url(r'^', include('choices.urls'))
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 else:
     urlpatterns = [
+        url(r'^admin/logout/', include('choices.urls')),
         url(r'^admin/', include(admin.site.urls)),
         url(r'^', include('choices.urls'))
     ]

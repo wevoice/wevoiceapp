@@ -15,6 +15,10 @@ from datetime import datetime
 from .validators import validate_user_is_authorized
 
 
+def url_redirect(request):
+    return HttpResponseRedirect('/')
+
+
 def user_login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)

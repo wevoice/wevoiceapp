@@ -4,6 +4,7 @@ import views
 
 urlpatterns = [
     url(r'^updatedb/$', views.updatedb, name='updatedb'),
+    url(r'^admin/logout/$', views.url_redirect, name='url_redirect'),
     url(r'^$', views.user_login, name='user_login'),
     url(r'^add_comment/$', views.add_comment, name='add_comment'),
     url(r'^delete_comment/$', views.delete_comment, name='delete_comment'),
