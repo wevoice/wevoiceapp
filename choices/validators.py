@@ -19,7 +19,7 @@ def validate_imagefile_extension(value):
 
 
 def validate_user_is_authorized(current_user, client_name):
-    if current_user.userprofile.client.username == client_name:
+    if hasattr(current_user.userprofile, 'client') and current_user.userprofile.client and current_user.userprofile.client.username == client_name:
         pass
     elif current_user.is_superuser:
         pass
