@@ -197,5 +197,5 @@ class CommentAdmin(admin.ModelAdmin):
 admin.site.register(models.Comment, CommentAdmin)
 
 
-admin.site.site_title = 'WeVoice Admin'
-admin.site.site_header = 'WeVoice Admin'
+admin.site.site_title = 'Voiceover Admin'
+admin.site.site_header = 'Voiceover Admin'

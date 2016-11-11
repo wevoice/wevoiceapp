@@ -39,7 +39,7 @@ def user_login(request):
 
                 else:
                     # An inactive account was used - no logging in!
-                    return HttpResponse("Sorry, this WeVoice account has been disabled.")
+                    return HttpResponse("Sorry, this Voiceover account has been disabled.")
             else:
                 # Bad login details were provided. So we can't log the user in.
                 print("Invalid login details: {0}, {1}".format(form.data['username'], form.data['password']))
