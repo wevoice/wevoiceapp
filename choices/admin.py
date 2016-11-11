@@ -16,7 +16,7 @@ class UserProfileInline(admin.StackedInline):
 
 
 class UserAdmin(AuthUserAdmin):
-    list_display = ('id', 'username', 'first_name', 'last_name', 'email', 'client_or_vendor_name', 'is_active',
+    list_display = ('id', 'username', 'client_or_vendor_name', 'first_name', 'last_name', 'email', 'is_active',
                     'is_superuser')
     list_display_links = ('id', 'username')
 
