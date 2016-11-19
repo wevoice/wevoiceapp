@@ -32,7 +32,7 @@ def user_login(request):
                     login(request, user)
                     if user.userprofile.client:
                         return HttpResponseRedirect(reverse('index', args=(user.userprofile.client.username,)))
-                    elif user.is_superuser or user.userprofile.vendor:
+                    elif user.is_staff or user.is_superuser or user.userprofile.vendor:
                         return HttpResponseRedirect('/admin')
                     else:
                         raise Http404("That user not found")
