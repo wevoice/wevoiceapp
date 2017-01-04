@@ -4,12 +4,6 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-# Honor the 'X-Forwarded-Proto' header for request.is_secure()
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-
 # SECURITY WARNING: change this before deploying to production!
 SECRET_KEY = 'i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s'
 
@@ -18,6 +12,11 @@ if os.environ.get('LOCAL_MACHINE'):
     DEBUG = True
 else:
     DEBUG = False
+    # Honor the 'X-Forwarded-Proto' header for request.is_secure()
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 TOOLBAR = False
 
