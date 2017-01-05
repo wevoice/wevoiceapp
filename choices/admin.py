@@ -124,7 +124,7 @@ class TalentResource(resources.ModelResource):
         skip_unchanged = True
         report_skipped = False
 
-        fields = ('welo_id', 'vendor_name', 'gender', 'age_range', 'language_name', 'audio_file')
+        fields = ('id', 'welo_id', 'vendor_name', 'gender', 'age_range', 'language_name', 'audio_file')
         export_order = fields
 
 
@@ -132,6 +132,7 @@ class TalentAdmin(ImportExportActionModelAdmin):
     form = AudioFileAdminForm
     inlines = [RatingInline]
     resource_class = TalentResource
+
     def get_queryset(self, request):
         qs = super(TalentAdmin, self).get_queryset(request)
         if request.user.userprofile.vendor:
