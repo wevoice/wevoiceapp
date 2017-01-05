@@ -128,11 +128,10 @@ class TalentResource(resources.ModelResource):
         export_order = fields
 
 
-# class TalentAdmin(ImportExportActionModelAdmin):
-class TalentAdmin(admin.ModelAdmin):
+class TalentAdmin(ImportExportActionModelAdmin):
     form = AudioFileAdminForm
     inlines = [RatingInline]
-    # resource_class = TalentResource
+    resource_class = TalentResource
     def get_queryset(self, request):
         qs = super(TalentAdmin, self).get_queryset(request)
         if request.user.userprofile.vendor:
@@ -218,7 +217,6 @@ admin.site.register(models.Selection, SelectionAdmin)
 class CommentAdmin(admin.ModelAdmin):
     list_filter = (
         ('author', filters.FilteredRelatedOnlyFieldListFilter),
-        # ('author__userprofile__client', admin.RelatedOnlyFieldListFilter),
     )
     list_display = ('selection', 'author', 'text', 'comment_client', 'created_date')
     search_fields = ['text', 'author__user__username', 'author__client__username', 'selection__talent__welo_id']
