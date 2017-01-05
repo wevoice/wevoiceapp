@@ -30,7 +30,8 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'choices',
     'legacy',
-    'django_cleanup'
+    'django_cleanup',
+    'import_export'
 )
 
 if os.environ.get('LOCAL_MACHINE') and TOOLBAR:

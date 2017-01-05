@@ -7,6 +7,10 @@ from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.forms import Textarea
 from django.db import models as dbmodels
+from import_export import resources
+from import_export.admin import ImportExportActionModelAdmin
+from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
+from import_export import fields
 
 
 class UserProfileInline(admin.StackedInline):
@@ -101,9 +105,33 @@ class RatingInline(admin.StackedInline):
     extra = 0
 
 
-class TalentAdmin(admin.ModelAdmin):
+class TalentResource(resources.ModelResource):
+
+    vendor_name = fields.Field(
+        column_name='vendor',
+        attribute='vendor',
+        widget=ForeignKeyWidget(models.Vendor, 'name')
+    )
+
+    language_name = fields.Field(
+        column_name='language',
+        attribute='language',
+        widget=ForeignKeyWidget(models.Language, 'language')
+    )
+
+    class Meta:
+        model = models.Talent
+        skip_unchanged = True
+        report_skipped = False
+
+        fields = ('welo_id', 'vendor_name', 'gender', 'age_range', 'language_name', 'audio_file')
+        export_order = fields
+
+
+class TalentAdmin(ImportExportActionModelAdmin):
     form = AudioFileAdminForm
     inlines = [RatingInline]
+    resource_class = TalentResource
 
     def get_queryset(self, request):
         qs = super(TalentAdmin, self).get_queryset(request)
