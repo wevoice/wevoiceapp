@@ -128,11 +128,11 @@ class TalentResource(resources.ModelResource):
         export_order = fields
 
 
-class TalentAdmin(ImportExportActionModelAdmin):
+# class TalentAdmin(ImportExportActionModelAdmin):
+class TalentAdmin(admin.ModelAdmin):
     form = AudioFileAdminForm
     inlines = [RatingInline]
-    resource_class = TalentResource
-
+    # resource_class = TalentResource
     def get_queryset(self, request):
         qs = super(TalentAdmin, self).get_queryset(request)
         if request.user.userprofile.vendor:
