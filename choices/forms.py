@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
+from .models import Client
 
 
 class LoginForm(forms.Form):
@@ -71,3 +72,8 @@ class DeleteCommentForm(forms.Form):
     comment_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
     client_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
     selection_id = forms.IntegerField(required=True, widget=forms.HiddenInput())
+
+
+class SelectClientForm(forms.Form):
+    _selected_action = forms.CharField(widget=forms.MultipleHiddenInput)
+    client = forms.ModelChoiceField(Client.objects)
