@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
 from choices.models import Talent
 import os
 from django.core.files import File
@@ -7,27 +8,25 @@ from django.core.files import File
 class Command(BaseCommand):
     help = 'Removes all unused files'
 
-    def add_arguments(self, parser):
-        parser.add_argument('file_path', nargs='+', type=str)
-
     def handle(self, *args, **options):
-        for dirpath, dirnames, filenames in os.walk(options['file_path'][1]):
+        filecount = 0
+        for talent in Talent.objects.all():
+            if os.path.exists(settings.MEDIA_ROOT + str(talent.audio_file)):
+                pass
+            else:
+                print("Missing file for: " + talent.welo_id)
+
+        for dirpath, dirnames, filenames in os.walk(settings.MEDIA_ROOT):
             for filename in filenames:
-                try:
-                    talent = Talent.objects.get(audio_file=filename)
-                except Talent.DoesNotExist:
-                    audio_file = dirpath + filename
-                    os.remove(audio_file)
-                    print('Removed: ' + filename)
-                except UnicodeDecodeError:
-                    print('Unicode Error, Could not remove: ' + filename)
-            for talent in Talent.objects.all():
-                if os.path.isfile(dirpath + str(talent.audio_file)):
-                    pass
-                else:
-                    print("Missing file for: " + talent.welo_id)
-
-
-
-
-            self.stdout.write(self.style.SUCCESS('Successfully updated "%s"' % options['file_path']))
+                if filename.split('.')[-1] == 'mp3':
+                    filecount += 1
+                    try:
+                        Talent.objects.get(audio_file=filename)
+                    except Talent.DoesNotExist:
+                        audio_file = dirpath + filename
+                        os.remove(audio_file)
+                        print('Removed: ' + filename)
+                    except UnicodeDecodeError:
+                        print('Unicode Error, Could not remove: ' + filename)
+        self.stdout.write(self.style.SUCCESS('Successfully updated %s. Total talents: %s Total files: %s'
+                                             % (settings.MEDIA_ROOT, Talent.objects.all().count(), filecount)))
