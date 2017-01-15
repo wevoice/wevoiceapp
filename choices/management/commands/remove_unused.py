@@ -25,6 +25,7 @@ class Command(BaseCommand):
                     except Talent.DoesNotExist:
                         audio_file = dirpath + filename
                         os.remove(audio_file)
+                        filecount -= 1
                         print('Removed: ' + filename)
                     except UnicodeDecodeError:
                         print('Unicode Error, Could not remove: ' + filename)

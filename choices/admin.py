@@ -86,6 +86,29 @@ admin.site.register(models.Language, LanguageAdmin)
 
 
 class AudioFileAdminForm(forms.ModelForm):
+    def files_sha(self, filepath):
+        """ Compute SHA (Secure Hash Algorythm) of a target_file.
+            Input : filepath : full path and name of file (eg. 'c:\windows\emm386.exe')
+            Output : string : contains the hexadecimal representation of the SHA of the target_file.
+                              returns '0' if file could not be read (file not found, no read rights...)
+        """
+        try:
+            data = None
+            with open(filepath, 'rb', 0) as f:
+                while True:
+                    chunk = f.read(65536)
+                    if chunk:
+                        data = chunk
+                    else:
+                        break
+            digest = shafunction.new()
+            digest.update(data)
+        except Exception as file_error:
+            self.print_error(file_error)
+            return '0'
+        else:
+            return digest.hexdigest()
+
     def clean_audio_file(self):
         if "audio_file" in self.changed_data:
             current_file = self.cleaned_data.get("audio_file", False)

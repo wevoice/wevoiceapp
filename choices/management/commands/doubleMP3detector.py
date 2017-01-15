@@ -1,36 +1,19 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from choices.models import Talent, Selection
+from . import remove_unused
 import os
 import os.path
 import string
 import sys
 import sha as shafunction
 from choices.models import Talent, Selection
+from django.core.management import call_command
 
 
 class Command(BaseCommand):
-    help = """
-    doublesdetector.py 1.0p
-
-    This script will search for files that are identical
-    (whatever their name/date/time).
-
-      Syntax : python %s <directories>
-
-          where <directories> is a directory or a list of directories
-          separated by a semicolon (;)
-
-    Examples : python %s c:\windows
-               python %s c:\;d:\;e:\ > doubles.txt
-               python %s c:\program files > doubles.txt
-
-    This script is public domain. Feel free to reuse and tweak it.
-    The author of this script Sebastien SAUVAGE <sebsauvage at sebsauvage dot net>
-    http://sebsauvage.net/python/
-    """ % ((sys.argv[0], )*4)
-
     def handle(self, *args, **options):
+        call_command('remove_unused')
         final_list = self.detect_doubles(settings.MEDIA_ROOT)
         for key in final_list.keys():
             n = 0
@@ -39,16 +22,21 @@ class Command(BaseCommand):
                     talent_sample = filename.split('/')[-1]
                     try:
                         talent_object = Talent.objects.get(audio_file=talent_sample)
+                        print("deleted: " + talent_object.welo_id)
                         if talent_object and talent_object.selection_set.all().count() > 0:
-                            print("to be deleted: " + talent_object.welo_id)
                             main_talent = Talent.objects.get(audio_file=final_list[key][n].split('/')[-1])
+                            selections_list = []
                             for s in talent_object.selection_set.all():
+                                selections_list.append([main_talent, s.client, s.status])
+                            talent_object.delete()
+                            for sl in selections_list:
                                 try:
-                                    new_s = Selection(talent=main_talent, client=s.client, status=s.status)
+                                    new_s = Selection(sl[0], sl[1], sl[2])
                                     new_s.save()
                                 except Exception as error:
                                     self.print_error(error)
-                        talent_object.delete()
+                        else:
+                            talent_object.delete()
                     except Talent.DoesNotExist:
                         pass
                     except Exception as e:
@@ -59,12 +47,12 @@ class Command(BaseCommand):
             print "\n"
         self.stdout.write(self.style.SUCCESS('Successfully updated "%s"' % settings.MEDIA_ROOT))
 
-    def detect_doubles(self, directories):
+    def detect_doubles(self, directory):
         fileslist = {}
         # Group all files by sha of sample in the fileslist dictionary
-        for directory in directories.split(';'):
-            directory = os.path.abspath(directory)
-            os.path.walk(directory, self.callback, fileslist)
+
+        directory = os.path.abspath(directory)
+        os.path.walk(directory, self.callback, fileslist)
 
         # Remove keys (filesample) in the dictionary which have only 1 file
         for (filesample, listoffiles) in fileslist.items():
