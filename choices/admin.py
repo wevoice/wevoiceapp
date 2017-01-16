@@ -200,6 +200,23 @@ def add_selection(self, request, queryset):
 add_selection.short_description = "Create new selections"
 
 
+class FileFieldView(FormView):
+    form_class = ConfirmImportForm
+    template_name = 'upload.html'  # Replace with your template.
+    # success_url = '...'  # Replace with your URL or reverse().
+
+    def post(self, request, *args, **kwargs):
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        files = request.FILES.getlist('sample_files')
+        if form.is_valid():
+            for f in files:
+                pass
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+
 class TalentAdmin(ImportExportActionModelAdmin):
     form = AudioFileAdminForm
     actions = [add_selection, ]
