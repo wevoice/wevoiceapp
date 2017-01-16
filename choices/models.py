@@ -101,6 +101,7 @@ class Talent(models.Model):
     language = models.ForeignKey("Language", null=True)
     comment = models.TextField(null=True, blank=True)
     audio_file = models.FileField(blank=True, null=True, validators=[validate_audiofile_extension])
+    audio_file_sha = models.CharField(max_length=40, blank=True, null=True)
     rate = models.TextField(null=True, blank=True)
     average_rating = models.IntegerField(null=True, blank=True)
 

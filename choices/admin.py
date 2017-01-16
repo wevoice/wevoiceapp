@@ -1,5 +1,6 @@
 import sys
 import os
+import hashlib
 from django.contrib import admin
 from django import forms
 from django.conf import settings
@@ -86,33 +87,39 @@ admin.site.register(models.Language, LanguageAdmin)
 
 
 class AudioFileAdminForm(forms.ModelForm):
-    def files_sha(self, filepath):
-        """ Compute SHA (Secure Hash Algorythm) of a target_file.
-            Input : filepath : full path and name of file (eg. 'c:\windows\emm386.exe')
-            Output : string : contains the hexadecimal representation of the SHA of the target_file.
-                              returns '0' if file could not be read (file not found, no read rights...)
-        """
+    def current_file_sha(self, current_file):
+        sha = hashlib.sha1()
+        current_file.seek(0)
         try:
             data = None
-            with open(filepath, 'rb', 0) as f:
-                while True:
-                    chunk = f.read(65536)
-                    if chunk:
-                        data = chunk
-                    else:
-                        break
-            digest = shafunction.new()
-            digest.update(data)
+            while True:
+                chunk = current_file.read(65536)
+                if chunk:
+                    data = chunk
+                else:
+                    break
+            sha.update(data)
+            sha1 = sha.hexdigest()
+            current_file.seek(0)
         except Exception as file_error:
             self.print_error(file_error)
             return '0'
         else:
-            return digest.hexdigest()
+            return sha1
+
+    def print_error(self, e):
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(e, exc_type, fname, exc_tb.tb_lineno)
 
     def clean_audio_file(self):
         if "audio_file" in self.changed_data:
-            current_file = self.cleaned_data.get("audio_file", False)
+            current_file = self.cleaned_data.get("audio_file")
+            current_file_sha = self.current_file_sha(current_file)
             destination = settings.MEDIA_ROOT
+            match_qs = models.Talent.objects.filter(audio_file_sha=current_file_sha)
+            if match_qs.count() > 0:
+                raise forms.ValidationError('This is the same content as the sample for talent ' + match_qs[0].welo_id)
             if os.path.isfile(destination + current_file.name):
                 raise forms.ValidationError('A file named '
                                             + current_file.name +
@@ -160,7 +167,6 @@ class TalentResource(resources.ModelResource):
 
 def add_selection(self, request, queryset):
     form = None
-
     if 'apply' in request.POST:
         form = SelectClientForm(request.POST)
 
@@ -182,19 +188,15 @@ def add_selection(self, request, queryset):
                         count += 1
                 except Exception as e:
                     print_error(e)
-
             plural = ''
             if count != 1:
                 plural = 's'
 
             self.message_user(request, "Successfully assigned %s talent%s to %s." % (count, plural, client.name))
             return HttpResponseRedirect('/admin/choices/selection/')
-
     if not form:
         form = SelectClientForm(initial={'_selected_action': request.POST.getlist(admin.ACTION_CHECKBOX_NAME)})
-
     return render(request, 'admin/add_selections.html', {'selections': queryset, 'client_form': form})
-
 add_selection.short_description = "Create new selections"
 
 
@@ -247,6 +249,18 @@ class TalentAdmin(ImportExportActionModelAdmin):
         css = {
              'all': ('css/admin/extra-admin.css',)
         }
+
+    # def save_model(self, request, obj, form, change):
+    #     current_file_sha = form.current_file_sha(obj.audio_file)
+    #     obj.audio_file_sha = current_file_sha
+    #     match_qs = models.Talent.objects.filter(file_sha1=current_file_sha)
+    #     if match_qs.count() > 0:
+    #         match_qs[0].audio_file = obj.audio_file.name
+    #         match_qs[0].welo_id = obj.audio_file.name.split('.')[-1]
+    #         # obj.file = match_qs[0].file
+    #     else:
+    #         obj.save()
+
 admin.site.register(models.Talent, TalentAdmin)
 
 

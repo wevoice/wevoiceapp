@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         filecount = 0
         for talent in Talent.objects.all():
-            if os.path.exists(settings.MEDIA_ROOT + str(talent.audio_file)):
+            if os.path.exists(talent.audio_file.path):
                 pass
             else:
                 print("Missing file for: " + talent.welo_id)
