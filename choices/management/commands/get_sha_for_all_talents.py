@@ -33,6 +33,7 @@ class Command(BaseCommand):
             self.print_error(file_error)
             return '0'
         else:
+            current_file.close()
             return sha1
 
     def print_error(self, e):
