@@ -10,6 +10,15 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
+class Upload(models.Model):
+    name = models.CharField(max_length=256)
+    audio_files = models.FileField(upload_to="bulk_upload/")
+
+    def __unicode__(self):
+        return self.name
+
+
+
 class Client(models.Model):
     name = models.TextField()
     username = models.TextField()
