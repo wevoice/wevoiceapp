@@ -146,3 +146,5 @@ DEBUG_TOOLBAR_PATCH_SETTINGS = False
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.UnsaltedMD5PasswordHasher',
 ]
+
+VALID_SOUND_FORMATS = ['mp3', 'm4a', 'wav']

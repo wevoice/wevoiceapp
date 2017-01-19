@@ -2,6 +2,8 @@ import sys
 import os
 import hashlib
 import django
+import openpyxl
+import tablib
 from django import forms
 from django.conf import settings
 from django.contrib import admin
@@ -10,9 +12,11 @@ from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
+from django.core.files import File
+from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
 from django.db import models as dbmodels
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.defaultfilters import pluralize
 from django.template.response import TemplateResponse
@@ -29,23 +33,23 @@ from .forms import SelectClientForm
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 import json
+from django.utils.encoding import force_text
 
-try:
-    from django.utils.encoding import force_text
-except ImportError:
-    from django.utils.encoding import force_unicode as force_text
-
-
-def print_error(e):
-    exc_type, exc_obj, exc_tb = sys.exc_info()
-    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    print(e, exc_type, fname, exc_tb.tb_lineno)
+XLSX_IMPORT = True
+admin.site.site_title = 'Voiceover Admin'
+admin.site.site_header = 'Voiceover Admin'
 
 
-class AudioFilesForm(forms.ModelForm):
-    audio_files = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}))
+class BaseAudioForm(forms.ModelForm):
 
-    def current_file_sha(self, current_file):
+    @staticmethod
+    def print_error(e):
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(e, exc_type, fname, exc_tb.tb_lineno)
+
+    @classmethod
+    def current_file_sha(cls, current_file):
         sha = hashlib.sha1()
         current_file.seek(0)
         try:
@@ -59,16 +63,15 @@ class AudioFilesForm(forms.ModelForm):
             sha.update(data)
             sha1 = sha.hexdigest()
             current_file.seek(0)
-        except Exception as file_error:
-            self.print_error(file_error)
+        except Exception as e:
+            cls.print_error(e)
             return '0'
         else:
             return sha1
 
-    def print_error(self, e):
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
+
+class AudioFilesForm(BaseAudioForm):
+    audio_files = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}))
 
     def clean(self):
         cleaned_data = self.cleaned_data
@@ -79,13 +82,14 @@ class AudioFilesForm(forms.ModelForm):
                 destination = settings.MEDIA_ROOT
                 match_qs = models.Talent.objects.filter(audio_file_sha=current_file_sha)
                 if match_qs.count() > 0:
-                    error_message = '%s has the same content as %s' % (f.name, match_qs[0].audio_file)
-                    print(error_message)
-                    # raise forms.ValidationError(error_message)
-                if os.path.isfile(destination + f.name):
-                    error_message = 'A file named %s already exists.' % f.name
-                    print(error_message)
-                    # raise forms.ValidationError(error_message)
+                    if f.name == match_qs[0].audio_file.name:
+                        print("Ignore: Content and name of %s is same as for talent %s" % (f.name, match_qs[0].welo_id))
+                    elif f.name != match_qs[0].audio_file.name:
+                        print("Change talent name: the content of %s is the same as %s" % (f.name, match_qs[0].welo_id))
+                elif os.path.isfile(destination + f.name):
+                    print('Overwrite old file with new: a file named %s with different content already exists' % f.name)
+                else:
+                    print('Add new talent: the file name and content is new for file %s' % f.name)
         return cleaned_data
 
 
@@ -157,32 +161,7 @@ class LanguageAdmin(admin.ModelAdmin):
 admin.site.register(models.Language, LanguageAdmin)
 
 
-class AudioFileAdminForm(forms.ModelForm):
-    def current_file_sha(self, current_file):
-        sha = hashlib.sha1()
-        current_file.seek(0)
-        try:
-            data = None
-            while True:
-                chunk = current_file.read(65536)
-                if chunk:
-                    data = chunk
-                else:
-                    break
-            sha.update(data)
-            sha1 = sha.hexdigest()
-            current_file.seek(0)
-        except Exception as file_error:
-            self.print_error(file_error)
-            return '0'
-        else:
-            return sha1
-
-    def print_error(self, e):
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-
+class AudioFileAdminForm(BaseAudioForm):
     def clean_audio_file(self):
         if "audio_file" in self.changed_data:
             current_file = self.cleaned_data.get("audio_file")
@@ -222,14 +201,108 @@ class ImportFormWithSamples(ImportForm):
         required=False
     )
 
+    @staticmethod
+    def selective_create_dataset(in_stream, sample_files_dict):
+        """
+        Create dataset from first sheet.
+        """
+        assert XLSX_IMPORT
+        from io import BytesIO
+        xlsx_book = openpyxl.load_workbook(BytesIO(in_stream), read_only=True)
+
+        dataset = tablib.Dataset()
+        sheet = xlsx_book.active
+
+        actions_dict = {'1': 'Did not import',
+                        '2': 'Replaced the talent file with the uploaded file',
+                        '3': 'Renamed the talent and its file with the uploaded file name',
+                        '4': 'Created new talent'}
+
+        messages_dict = {'1': 'No matching filename in the uploaded fileset',
+                         '2': 'Talent exists with same name and content as file',
+                         '3': 'Talent exists with same name but different content as file',
+                         '4': 'Talent exists same content but different name as file',
+                         '5': 'No existing talent with this name or content'}
+
+        messages_dict = {'not_in_uploads': {'message': messages_dict['1'],
+                                            'action': actions_dict['1'],
+                                            'file_pairs': []},
+                         'same_name_content': {'message': messages_dict['2'],
+                                               'action': actions_dict['1'],
+                                               'file_pairs': []},
+                         'same_name_diff_content': {'message': messages_dict['3'],
+                                                    'action': actions_dict['2'],
+                                                    'file_pairs': []},
+                         'same_content_diff_name': {'message': messages_dict['4'],
+                                                    'action': actions_dict['3'],
+                                                    'file_pairs': []},
+                         'new_name_new_content': {'message': messages_dict['5'],
+                                                  'action': actions_dict['4'],
+                                                  'file_pairs': []}}
+
+        rows = sheet.rows
+        dataset.headers = [cell.value for cell in next(rows)]
+
+        import_file = True
+        if 'prerun' not in sample_files_dict:
+
+            sample_files_dict['prerun'] = True
+
+            for row in rows:
+                existing_talent = models.Talent.objects.filter(audio_file=row[1].value.replace(" ", "_"))
+                import_file_sha = None
+                talent_with_matching_file_sha = None
+                if row[1].value in sample_files_dict:
+                    import_file_sha = BaseAudioForm.current_file_sha(File(open(sample_files_dict[row[1].value])))
+                    talent_with_matching_file_sha = models.Talent.objects.filter(audio_file_sha=import_file_sha)
+                else:
+                    upload_file = row[1].value
+                    import_file = False
+                    messages_dict['not_in_uploads']['file_pairs'].append(upload_file)
+                    print("%s: %s | %s" % (upload_file, messages_dict['not_in_uploads']['message'],
+                                           messages_dict['not_in_uploads']['action']))
+                if existing_talent.exists():
+                    if import_file_sha and import_file_sha == existing_talent[0].audio_file_sha:
+                        file_pair = (existing_talent[0].welo_id, row[1].value)
+                        import_file = False
+                        sample_files_dict.pop(row[1].value, None)
+                        messages_dict['same_name_content']['file_pairs'].append(file_pair)
+                        print("%s: %s | %s" % (str(file_pair), messages_dict['same_name_content']['message'],
+                                               messages_dict['same_name_content']['action']))
+                    else:
+                        file_pair = (existing_talent[0].welo_id, row[1].value)
+                        import_file = False
+                        sample_files_dict.pop(row[1].value, None)
+                        messages_dict['same_name_diff_content']['file_pairs'].append(file_pair)
+                        print("%s: %s | %s" % (str(file_pair), messages_dict['same_name_diff_content']['message'],
+                                               messages_dict['same_name_diff_content']['action']))
+                elif talent_with_matching_file_sha and talent_with_matching_file_sha.exists():
+                    file_pair = (talent_with_matching_file_sha[0].welo_id, row[1].value)
+                    import_file = False
+                    sample_files_dict.pop(row[1].value, None)
+                    messages_dict['same_content_diff_name']['file_pairs'].append(file_pair)
+                    print("%s: %s | %s" % (str(file_pair), messages_dict['same_content_diff_name']['message'],
+                                           messages_dict['same_content_diff_name']['action']))
+                if import_file:
+                    upload_file = row[1].value
+                    messages_dict['new_name_new_content']['file_pairs'].append(upload_file)
+                    print("%s: %s | %s" % (upload_file, messages_dict['new_name_new_content']['message'],
+                                           messages_dict['new_name_new_content']['action']))
+                    row_values = [cell.value for cell in row]
+                    dataset.append(row_values)
+        else:
+            for row in rows:
+                if row[1].value in sample_files_dict:
+                    row_values = [cell.value for cell in row]
+                    dataset.append(row_values)
+        return dataset
+
 
 class ConfirmImportFormWithSamples(ConfirmImportForm):
-    sample_files_list = forms.CharField(widget=forms.HiddenInput())
+    sample_files_dict = forms.CharField(widget=forms.HiddenInput())
 
-    def clean_sample_files_list(self):
-        sample_files_list_data = self.cleaned_data['sample_files_list']
-        # sample_files_list_data = os.path.basename(sample_files_list_data)
-        return json.loads(sample_files_list_data)
+    def clean_sample_files_dict(self):
+        return json.loads(self.cleaned_data['sample_files_dict'])
 
 
 class TalentResource(resources.ModelResource):
@@ -239,17 +312,17 @@ class TalentResource(resources.ModelResource):
         widget=ForeignKeyWidget(models.Vendor, 'name')
     )
 
-    language_name = fields.Field(
-        column_name='language',
+    code = fields.Field(
+        column_name='code',
         attribute='language',
-        widget=ForeignKeyWidget(models.Language, 'language')
+        widget=ForeignKeyWidget(models.Language, 'code')
     )
 
     class Meta:
         model = models.Talent
         skip_unchanged = True
         report_skipped = False
-        fields = ('id', 'welo_id', 'vendor_name', 'gender', 'age_range', 'language_name', 'audio_file')
+        fields = ('id', 'audio_file', 'vendor_name', 'type', 'gender', 'age_range', 'code')
         export_order = fields
 
 
@@ -276,7 +349,7 @@ def add_selection(self, request, queryset):
                         new_selection.save()
                         count += 1
                 except Exception as e:
-                    print_error(e)
+                    BaseAudioForm.print_error(e)
 
             plural = ''
             if count != 1:
@@ -293,27 +366,19 @@ def add_selection(self, request, queryset):
 add_selection.short_description = "Create new selections"
 
 
-# class FileFieldView(FormView):
-#     form_class = ConfirmImportForm
-#     template_name = 'upload.html'  # Replace with your template.
-#     # success_url = '...'  # Replace with your URL or reverse().
-#
-#     def post(self, request, *args, **kwargs):
-#         form_class = self.get_form_class()
-#         form = self.get_form(form_class)
-#         files = request.FILES.getlist('sample_files')
-#         if form.is_valid():
-#             for f in files:
-#                 pass
-#             return self.form_valid(form)
-#         else:
-#             return self.form_invalid(form)
+def delete_talents(self, request, queryset):
+    for talent in queryset:
+        talent.delete()
+    self.message_user(request, "Successfully deleted %s talents." % queryset.count())
+    return HttpResponseRedirect('/admin/choices/talent/')
+delete_talents.short_description = "Delete Talents"
+
 
 class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
     def save_sample_files(self, sample_files):
-        samples_tmp_storage = self.get_tmp_storage_class()()
         sample_files_dict = {}
         for sample_file in sample_files:
+            samples_tmp_storage = self.get_tmp_storage_class()()
             sample_file_data = bytes()
             for chunk in sample_file.chunks():
                 sample_file_data += chunk
@@ -323,13 +388,7 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
             except Exception as e:
                 print(e)
             sample_files_dict[sample_file.name] = samples_tmp_storage.name
-        return json.dumps(sample_files_dict)
-
-    # def save_sample_files(self, sample_files):
-    #     sample_files_list = []
-    #     for sample_file in sample_files:
-    #         sample_files_list.append(sample_file.name)
-    #     return json.dumps(sample_files_list)
+        return sample_files_dict
 
     def import_action(self, request, *args, **kwargs):
         """
@@ -341,6 +400,7 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
         resource = self.get_import_resource_class()(**self.get_import_resource_kwargs(request, *args, **kwargs))
 
         context = {}
+        dataset = None
 
         import_formats = self.get_import_formats()
         form = ImportFormWithSamples(import_formats, request.POST or None, request.FILES or None)
@@ -359,6 +419,7 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
                 data += chunk
 
             tmp_storage.save(data, input_format.get_read_mode())
+            sample_files_dict = self.save_sample_files(sample_files)
 
             # then read the file, using the proper format-specific mode
             # warning, big files may exceed memory
@@ -366,12 +427,14 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
                 data = tmp_storage.read(input_format.get_read_mode())
                 if not input_format.is_binary() and self.from_encoding:
                     data = force_text(data, self.from_encoding)
-                dataset = input_format.create_dataset(data)
+                dataset = form.selective_create_dataset(data, sample_files_dict)
             except UnicodeDecodeError as e:
-                return HttpResponse(_(u"<h1>Imported file has a wrong encoding: %s</h1>" % e))
+                BaseAudioForm.print_error(e)
+                # return HttpResponse(_(u"<h1>Imported file has a wrong encoding: %s</h1>" % e))
             except Exception as e:
-                return HttpResponse(_(u"<h1>%s encountered while trying to read file: %s</h1>" % (type(e).__name__,
-                                                                                                  import_file.name)))
+                BaseAudioForm.print_error(e)
+                # return HttpResponse(_(u"<h1>%s encountered while trying to read file: %s</h1>" % (type(e).__name__,
+                #                                                                                   import_file.name)))
 
             result = resource.import_data(dataset, dry_run=True,
                                           raise_errors=False,
@@ -381,12 +444,11 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
             context['result'] = result
 
             if not result.has_errors():
-                sample_files_list = self.save_sample_files(sample_files)
                 context['confirm_form'] = ConfirmImportFormWithSamples(initial={
                     'import_file_name': tmp_storage.name,
                     'original_file_name': import_file.name,
                     'input_format': form.cleaned_data['input_format'],
-                    'sample_files_list': sample_files_list
+                    'sample_files_dict': json.dumps(sample_files_dict)
                 })
 
         if django.VERSION >= (1, 8, 0):
@@ -403,19 +465,26 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
         return TemplateResponse(request, ["multi_file_import.html"],
                                 context)
 
+    def retrieve_stored_sample_files(self, sample_files_dict):
+        retrieved_sample_files_dict = {}
+        for key, value in sample_files_dict.items():
+            if key != 'prerun':
+                retrieved_sample_file = self.get_tmp_storage_class()(name=value)
+                data = retrieved_sample_file.read('rb')
+                retrieved_sample_files_dict[key] = data
+        return retrieved_sample_files_dict
+
     @method_decorator(require_POST)
     def process_import(self, request, *args, **kwargs):
-        '''
+        """
         Perform the actual import action (after the user has confirmed he
         wishes to import)
-        '''
+        """
         opts = self.model._meta
         resource = self.get_import_resource_class()(**self.get_import_resource_kwargs(request, *args, **kwargs))
 
         confirm_form = ConfirmImportFormWithSamples(request.POST)
         if confirm_form.is_valid():
-            sample_files_list = confirm_form.cleaned_data['sample_files_list']
-            # sample_files_list_data = os.path.basename(sample_files_list_data)
             import_formats = self.get_import_formats()
             input_format = import_formats[
                 int(confirm_form.cleaned_data['input_format'])
@@ -424,8 +493,9 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
             data = tmp_storage.read(input_format.get_read_mode())
             if not input_format.is_binary() and self.from_encoding:
                 data = force_text(data, self.from_encoding)
-            dataset = input_format.create_dataset(data)
-
+            sample_files_dict = confirm_form.cleaned_data['sample_files_dict']
+            stored_sample_files_dict = self.retrieve_stored_sample_files(sample_files_dict)
+            dataset = ImportFormWithSamples.selective_create_dataset(data, sample_files_dict)
             result = resource.import_data(dataset, dry_run=False,
                                           raise_errors=True,
                                           file_name=confirm_form.cleaned_data['original_file_name'],
@@ -439,8 +509,19 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
                     RowResult.IMPORT_TYPE_DELETE: DELETION,
                 }
                 content_type_id = ContentType.objects.get_for_model(self.model).pk
+                counter = 0
                 for row in result:
                     if row.import_type != row.IMPORT_TYPE_ERROR and row.import_type != row.IMPORT_TYPE_SKIP:
+                        if row.import_type == 'new':
+                            filename = dataset._data[counter]._row[1]
+                            new_talent = models.Talent.objects.filter(audio_file=filename)
+                            if new_talent > 0:
+                                if filename in stored_sample_files_dict:
+                                    new_talent[0].audio_file.save(os.path.basename(filename),
+                                                                  ContentFile(stored_sample_files_dict[filename]))
+                                    new_talent[0].save()
+                                else:
+                                    new_talent.delete()
                         LogEntry.objects.log_action(
                             user_id=request.user.pk,
                             content_type_id=content_type_id,
@@ -449,6 +530,7 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
                             action_flag=logentry_map[row.import_type],
                             change_message="%s through import_export" % row.import_type,
                         )
+                    counter += 1
 
             success_message = u'Import finished, with {} new {}{} and ' \
                               u'{} updated {}{}.'.format(result.totals[RowResult.IMPORT_TYPE_NEW],
@@ -470,7 +552,7 @@ class ImportExportWithSamplesActionModelAdmin(ImportExportActionModelAdmin):
 
 class TalentAdmin(ImportExportWithSamplesActionModelAdmin):
     form = AudioFileAdminForm
-    actions = [add_selection, ]
+    actions = [add_selection, delete_talents]
     inlines = [RatingInline]
     resource_class = TalentResource
 
@@ -517,18 +599,6 @@ class TalentAdmin(ImportExportWithSamplesActionModelAdmin):
         css = {
              'all': ('css/admin/extra-admin.css',)
         }
-
-    # def save_model(self, request, obj, form, change):
-    #     current_file_sha = form.current_file_sha(obj.audio_file)
-    #     obj.audio_file_sha = current_file_sha
-    #     match_qs = models.Talent.objects.filter(file_sha1=current_file_sha)
-    #     if match_qs.count() > 0:
-    #         match_qs[0].audio_file = obj.audio_file.name
-    #         match_qs[0].welo_id = obj.audio_file.name.split('.')[-1]
-    #         # obj.file = match_qs[0].file
-    #     else:
-    #         obj.save()
-
 admin.site.register(models.Talent, TalentAdmin)
 
 
@@ -576,7 +646,3 @@ class CommentAdmin(admin.ModelAdmin):
     list_display = ('selection', 'author', 'text', 'comment_client', 'created_date')
     search_fields = ['text', 'author__user__username', 'author__client__username', 'selection__talent__welo_id']
 admin.site.register(models.Comment, CommentAdmin)
-
-
-admin.site.site_title = 'Voiceover Admin'
-admin.site.site_header = 'Voiceover Admin'

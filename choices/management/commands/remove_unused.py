@@ -1,8 +1,7 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.conf import settings
 from choices.models import Talent
 import os
-from django.core.files import File
 
 
 class Command(BaseCommand):
@@ -18,7 +17,7 @@ class Command(BaseCommand):
 
         for dirpath, dirnames, filenames in os.walk(settings.MEDIA_ROOT):
             for filename in filenames:
-                if filename.split('.')[-1] == 'mp3':
+                if filename.split('.')[-1] in settings.VALID_SOUND_FORMATS:
                     filecount += 1
                     try:
                         Talent.objects.get(audio_file=filename)

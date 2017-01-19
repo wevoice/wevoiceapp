@@ -18,7 +18,6 @@ class Upload(models.Model):
         return self.name
 
 
-
 class Client(models.Model):
     name = models.TextField()
     username = models.TextField()
@@ -59,6 +58,7 @@ def save_user_profile(sender, instance, **kwargs):
 
 class Language(models.Model):
     language = models.TextField()
+    code = models.CharField(max_length=32, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -156,7 +156,8 @@ class Talent(models.Model):
         ordering = ['welo_id']
 
     def save(self, *args, **kwargs):
-        self.welo_id = self.audio_file.name.split('.mp3')[0]
+        if self.audio_file and self.welo_id != self.audio_file.name.split('.')[-2]:
+            self.welo_id = self.audio_file.name.split('.')[-2]
         self.average_rating = self.get_average_rating()
         super(Talent, self).save(*args, **kwargs)
 

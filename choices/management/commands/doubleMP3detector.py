@@ -1,12 +1,9 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.conf import settings
-from choices.models import Talent, Selection
-from . import remove_unused
 import os
 import os.path
-import string
 import sys
-import sha as shafunction
+import hashlib
 from choices.models import Talent, Selection
 from django.core.management import call_command
 
@@ -62,7 +59,7 @@ class Command(BaseCommand):
 
     def callback(self, fileslist, directory, files):
         for fileName in files:
-            if fileName.split('.')[-1] == 'mp3':
+            if fileName.split('.')[-1] in settings.VALID_SOUND_FORMATS:
                 filepath = os.path.join(directory, fileName)
                 if os.path.isfile(filepath):
                     filesample = self.files_sha(filepath)
@@ -77,6 +74,7 @@ class Command(BaseCommand):
             Output : string : contains the hexadecimal representation of the SHA of the target_file.
                               returns '0' if file could not be read (file not found, no read rights...)
         """
+        sha = hashlib.sha1()
         try:
             data = None
             with open(filepath, 'rb', 0) as f:
@@ -86,13 +84,13 @@ class Command(BaseCommand):
                         data = chunk
                     else:
                         break
-            digest = shafunction.new()
-            digest.update(data)
+            sha.update(data)
+            sha1 = sha.hexdigest()
         except Exception as file_error:
             self.print_error(file_error)
             return '0'
         else:
-            return digest.hexdigest()
+            return sha1
 
     def print_error(self, e):
         exc_type, exc_obj, exc_tb = sys.exc_info()
