@@ -6,7 +6,7 @@ from django.conf import settings
 def validate_audiofile_extension(value):
     from django.core.exceptions import ValidationError
     ext = os.path.splitext(value.name)[1]  # [0] returns path+filename
-    if not ext.lower() in settings.VALID_SOUND_FORMATS:
+    if not ext.lower().strip('.') in settings.VALID_SOUND_FORMATS:
         raise ValidationError(u'Only .mp3, .wav, and .m4a files are supported.')
 
 

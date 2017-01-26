@@ -102,15 +102,15 @@ class Talent(models.Model):
         ("75 +", "75 +")
     )
 
-    type = models.CharField(max_length=16, choices=TYPE_CHOICES, default="PR0", blank=True, null=True)
-    welo_id = models.TextField(blank=True, null=True)
+    type = models.CharField(max_length=16, choices=TYPE_CHOICES, default="PR0", null=True)
+    welo_id = models.TextField(blank=True, null=True, unique=True)
     vendor = models.ForeignKey("Vendor", default=9, blank=True, null=True)
     gender = models.CharField(max_length=32, choices=GENDER_CHOICES, default="U")
     age_range = models.CharField(max_length=32, choices=AGE_RANGE, default="26-45")
     language = models.ForeignKey("Language", null=True)
     comment = models.TextField(null=True, blank=True)
     audio_file = models.FileField(blank=True, null=True, validators=[validate_audiofile_extension])
-    audio_file_sha = models.CharField(max_length=40, blank=True, null=True)
+    audio_file_sha = models.CharField(max_length=40, blank=True, null=True, unique=True)
     rate = models.TextField(null=True, blank=True)
     average_rating = models.IntegerField(null=True, blank=True)
 
@@ -146,6 +146,9 @@ class Talent(models.Model):
     def get_times_rejected(self):
         return self.selection_set.filter(status="REJECTED").count()
     get_times_rejected.short_description = 'Rejected Total'
+
+    def get_audio_file_sha(self):
+        return self.selection_set.filter(status="REJECTED").count()
 
     def __unicode__(self):
         return self.welo_id

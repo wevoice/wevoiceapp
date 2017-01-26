@@ -241,6 +241,11 @@ class TalentAdmin(ImportExportActionModelAdmin):
         del actions['delete_selected']
         return actions
 
+    def save_model(self, request, obj, form, change):
+        if not obj.audio_file_sha or 'audio_file' in form.changed_data:
+            obj.audio_file_sha = form.current_file_sha(obj.audio_file.file)
+        super(TalentAdmin, self).save_model(request, obj, form, change)
+
     class Media:
         def __init__(self):
             pass
