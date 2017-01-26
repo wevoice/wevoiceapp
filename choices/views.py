@@ -10,7 +10,6 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
 from datetime import datetime
 from .validators import validate_user_is_authorized
 

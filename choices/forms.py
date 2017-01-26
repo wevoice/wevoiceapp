@@ -1,3 +1,6 @@
+import os
+import sys
+import hashlib
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -77,3 +80,33 @@ class DeleteCommentForm(forms.Form):
 class SelectClientForm(forms.Form):
     _selected_action = forms.CharField(widget=forms.MultipleHiddenInput)
     client = forms.ModelChoiceField(Client.objects)
+
+
+class BaseAudioForm(forms.ModelForm):
+
+    @staticmethod
+    def print_error(e):
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(e, exc_type, fname, exc_tb.tb_lineno)
+
+    @classmethod
+    def current_file_sha(cls, current_file):
+        sha = hashlib.sha1()
+        current_file.seek(0)
+        try:
+            data = None
+            while True:
+                chunk = current_file.read(65536)
+                if chunk:
+                    data = chunk
+                else:
+                    break
+            sha.update(data)
+            sha1 = sha.hexdigest()
+            current_file.seek(0)
+        except Exception as e:
+            cls.print_error(e)
+            return '0'
+        else:
+            return sha1

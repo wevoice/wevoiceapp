@@ -50,9 +50,7 @@
     </div>
   </form>
 {% endif %}
-
 {% if result %}
-
   {% if result.has_errors %}
     <h2>{% trans "Errors" %}</h2>
     <ul>
@@ -73,41 +71,50 @@
       {% endfor %}
     </ul>
   {% else %}
-
   <h2>
     {% trans "Preview" %}
   </h2>
-  <table>
-    <thead>
-      <tr>
-        <th></th>
-        {% for field in result.diff_headers %}
-          <th>{{ field }}</th>
+    {% regroup result.rows|dictsort:"import_type" by import_type as import_type_list %}
+    {% for import_type in import_type_list %}
+        <table>
+        <thead>
+        <col style="width:33.3%" span="3" />
+          <tr style="color: white; background-color: #94b24d">
+                <td>
+                {% if import_type.grouper == 'new' %}
+                    {% trans "NEW TALENTS WILL BE CREATED FOR THE FOLLOWING: There are no existing talents with the same file names or content" %}
+                {% elif import_type.grouper == 'skip' %}
+                    {% trans "THE FOLLOWING WILL NOT BE IMPORTED: There are no files with these names in the uploaded set" %}
+                {% elif import_type.grouper == 'duplicate' %}
+                    {% trans "THE FOLLOWING WILL NOT BE IMPORTED: There are already talents with the same names and content as these files" %}
+                {% elif import_type.grouper == 'delete' %}
+                    {% trans "THE FOLLOWING FILES WILL REPLACE THOSE FOR EXISTING TALENTS: Talents exist with the same name but different content from these files" %}
+                {% elif import_type.grouper == 'update' %}
+                    {% trans "THE FOLLOWING FILES WILL BE USED TO UPDATE EXISTING TALENT AND FILE NAMES: Talents exist with the same content but different names than these files" %}
+                {% else %}
+                    {{ import_type.grouper }}{% trans "DO STUFF BASE ON THIS GROUPER" %}
+                {% endif %}
+                </td>
+          </tr>
+          <tr style="background-color: #bbbbbb">
+            {% for field in result.diff_headers %}
+              <th>{{ field }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        {% for row in import_type.list %}
+            <tr>
+                {% for field in row.diff %}
+                    <td>
+                        {{ field }}
+                    </td>
+                {% endfor %}
+            </tr>
         {% endfor %}
-      </tr>
-    </thead>
-    {% for row in result.rows %}
-    <tr>
-      <td>
-        {% if row.import_type == 'new' %}
-          {% trans "New" %}
-        {% elif row.import_type == 'skip' %}
-          {% trans "Skipped" %}
-        {% elif row.import_type == 'delete' %}
-          {% trans "Delete" %}
-        {% elif row.import_type == 'update' %}
-          {% trans "Update" %}
-        {% endif %}
-      </td>
-      {% for field in row.diff %}
-      <td>
-        {{ field }}
-      </td>
-      {% endfor %}
-    </tr>
+    </table>
     {% endfor %}
-  </table>
   {% endif %}
 
   {% endif %}
 {% endblock %}
+
