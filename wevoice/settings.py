@@ -29,7 +29,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'choices',
-    'legacy',
     'django_cleanup',
     'import_export',
 )
@@ -83,15 +82,6 @@ DATABASES = {
         'HOST': 'localhost',
         'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"},
         'PORT': ''
-    },
-    'legacy': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'legacy',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"},
-        'PORT': ''
     }
 }
 
@@ -135,8 +125,6 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 
 LOGIN_URL = '/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
-
-DATABASE_ROUTERS = ['legacy.router.LegacyRouter']
 
 # Debug Toolbar settings
 INTERNAL_IPS = ['127.0.0.1', ]

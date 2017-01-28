@@ -3,7 +3,6 @@ from django.conf.urls import url
 import views
 
 urlpatterns = [
-    url(r'^updatedb/$', views.updatedb, name='updatedb'),
     url(r'^admin/logout/$', views.url_redirect, name='url_redirect'),
     url(r'^$', views.user_login, name='user_login'),
     url(r'^add_comment/$', views.add_comment, name='add_comment'),
