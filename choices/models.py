@@ -113,6 +113,8 @@ class Talent(models.Model):
     audio_file_sha = models.CharField(max_length=40, blank=True, null=True, unique=True)
     rate = models.TextField(null=True, blank=True)
     average_rating = models.IntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def audio_file_player(self):
         """audio player tag for admin"""

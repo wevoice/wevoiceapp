@@ -150,31 +150,32 @@ class TalentResource(resources.ModelResource):
         import_file = True
         for row in rows:
             existing_talent = models.Talent.objects.filter(audio_file=row[0].value.replace(" ", "_"))
-            import_file_sha = None
-            talent_with_matching_file_sha = None
-            if row[0].value in self.sample_files_dict:
-                import_file_sha = BaseAudioForm.current_file_sha(File(open(self.sample_files_dict[row[0].value])))
-                talent_with_matching_file_sha = models.Talent.objects.filter(audio_file_sha=import_file_sha)
-            else:
+            if not row[0].value in self.sample_files_dict:
                 upload_file = row[0].value
                 import_file = False
                 template_messages_dict['not_in_uploads']['file_pairs'].append(upload_file)
-            if existing_talent.exists():
-                if import_file_sha and import_file_sha == existing_talent[0].audio_file_sha:
-                    file_pair = (existing_talent[0].welo_id, row[0].value)
-                    import_file = False
-                    self.sample_files_dict.pop(row[0].value, None)
-                    template_messages_dict['same_name_content']['file_pairs'].append(file_pair)
-                else:
-                    file_pair = (existing_talent[0].welo_id, row[0].value)
-                    import_file = False
-                    self.sample_files_dict.pop(row[0].value, None)
-                    template_messages_dict['same_name_diff_content']['file_pairs'].append(file_pair)
-            elif talent_with_matching_file_sha and talent_with_matching_file_sha.exists():
-                file_pair = (talent_with_matching_file_sha[0].welo_id, row[0].value)
-                import_file = False
-                self.sample_files_dict.pop(row[0].value, None)
-                template_messages_dict['same_content_diff_name']['file_pairs'].append(file_pair)
+            else:
+                import_file_sha = BaseAudioForm.current_file_sha(File(open(self.sample_files_dict[row[0].value])))
+                talent_with_matching_file_sha = models.Talent.objects.filter(audio_file_sha=import_file_sha)
+                try:
+                    if existing_talent.exists():
+                        if import_file_sha and import_file_sha == existing_talent[0].audio_file_sha:
+                            file_pair = (existing_talent[0].welo_id, row[0].value)
+                            import_file = False
+                            # self.sample_files_dict.pop(row[0].value, None)
+                            template_messages_dict['same_name_content']['file_pairs'].append(file_pair)
+                        else:
+                            file_pair = (existing_talent[0].welo_id, row[0].value)
+                            import_file = False
+                            # self.sample_files_dict.pop(row[0].value, None)
+                            template_messages_dict['same_name_diff_content']['file_pairs'].append(file_pair)
+                    elif talent_with_matching_file_sha and talent_with_matching_file_sha.exists():
+                        file_pair = (talent_with_matching_file_sha[0].welo_id, row[0].value)
+                        import_file = False
+                        # self.sample_files_dict.pop(row[0].value, None)
+                        template_messages_dict['same_content_diff_name']['file_pairs'].append(file_pair)
+                except Exception as e:
+                    print(e)
             if import_file:
                 upload_file = row[0].value
                 template_messages_dict['new_name_new_content']['file_pairs'].append(upload_file)
@@ -245,9 +246,7 @@ class TalentResource(resources.ModelResource):
             self.before_import_row(row, **kwargs)
             instance, new = self.get_or_init_instance(instance_loader, row)
             self.after_import_instance(instance, new, **kwargs)
-            if new and new_file in self.sample_files_dict:
-                row_result.import_type = RowResult.IMPORT_TYPE_NEW
-            elif new_file in m_dict['not_in_uploads']['file_pairs']:
+            if new_file in m_dict['not_in_uploads']['file_pairs']:
                 row_result.import_type = RowResult.IMPORT_TYPE_SKIP
             elif new_file in [i for s in m_dict['same_name_content']['file_pairs'] for i in s]:
                 row_result.import_type = RowResult.IMPORT_TYPE_DUPLICATE
@@ -255,6 +254,8 @@ class TalentResource(resources.ModelResource):
                 row_result.import_type = RowResult.IMPORT_TYPE_UPDATE
             elif new_file in [i for s in m_dict['same_name_diff_content']['file_pairs'] for i in s]:
                 row_result.import_type = RowResult.IMPORT_TYPE_DELETE
+            elif new and new_file in self.sample_files_dict:
+                row_result.import_type = RowResult.IMPORT_TYPE_NEW
             else:
                 row_result.import_type = RowResult.IMPORT_TYPE_ERROR
 
@@ -271,12 +272,15 @@ class TalentResource(resources.ModelResource):
                     diff.compare_with(self, None, dry_run)
             else:
                 self.import_obj(instance, row, dry_run)
-                if self.skip_row(instance, original):
-                    row_result.import_type = RowResult.IMPORT_TYPE_SKIP
-                else:
-                    with transaction.atomic():
-                        self.save_instance(instance, using_transactions, dry_run)
-                    self.save_m2m(instance, row, using_transactions, dry_run)
+                # if self.skip_row(instance, original):
+                #     row_result.import_type = RowResult.IMPORT_TYPE_SKIP
+                # else:
+                #     with transaction.atomic():
+                #         self.save_instance(instance, using_transactions, dry_run)
+                #     self.save_m2m(instance, row, using_transactions, dry_run)
+                with transaction.atomic():
+                    self.save_instance(instance, using_transactions, dry_run)
+                self.save_m2m(instance, row, using_transactions, dry_run)
                 diff.compare_with(self, instance, dry_run)
             row_result.diff = diff.as_html()
             # Add object info to RowResult for LogEntry

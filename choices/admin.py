@@ -230,9 +230,9 @@ class TalentAdmin(ImportExportActionModelAdmin):
                    ('vendor', filters.FilteredRelatedOnlyFieldListFilter),
                    ('language', filters.FilteredRelatedOnlyFieldListFilter))
     list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range',
-                    'average_rating', 'get_times_preapproved', 'get_times_accepted', 'get_times_rejected')
+                    'average_rating', 'get_times_preapproved', 'get_times_accepted', 'get_times_rejected', 'created_at')
     list_display_links = ('id', 'welo_id')
-    readonly_fields = ('rate', 'welo_id')
+    readonly_fields = ('rate', 'welo_id', 'audio_file_sha', 'average_rating', 'created_at', 'updated_at')
     search_fields = ('id', 'welo_id', 'vendor__name', 'language__language')
     list_per_page = 100
 
