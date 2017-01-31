@@ -1,20 +1,17 @@
 import os
 from django import forms
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.db import models as dbmodels
 from django.shortcuts import render
 from import_export.admin import ImportExportActionModelAdmin
 from . import models, filters, samples_import
 from .forms import SelectClientForm, BaseAudioForm
-
 import django
 import json
 from django.contrib import admin
 from django.template.response import TemplateResponse
-
-
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
@@ -27,38 +24,12 @@ from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
 from import_export.signals import post_import
 from import_export.results import RowResult
+from import_export.formats import base_formats
 
 
 admin.site.site_title = 'Voiceover Admin'
 admin.site.site_header = 'Voiceover Admin'
-
-
-class AudioFilesForm(BaseAudioForm):
-    audio_files = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}))
-
-    def clean(self):
-        cleaned_data = self.cleaned_data
-        files = self.files.getlist('audio_files')
-        if self.is_valid():
-            for f in files:
-                current_file_sha = self.current_file_sha(f)
-                destination = settings.MEDIA_ROOT
-                match_qs = models.Talent.objects.filter(audio_file_sha=current_file_sha)
-                if match_qs.count() > 0:
-                    if f.name == match_qs[0].audio_file.name:
-                        print("Ignore: Content and name of %s is same as for talent %s" % (f.name, match_qs[0].welo_id))
-                    elif f.name != match_qs[0].audio_file.name:
-                        print("Change talent name: the content of %s is the same as %s" % (f.name, match_qs[0].welo_id))
-                elif os.path.isfile(destination + f.name):
-                    print('Overwrite old file with new: a file named %s with different content already exists' % f.name)
-                else:
-                    print('Add new talent: the file name and content is new for file %s' % f.name)
-        return cleaned_data
-
-
-class UploadAdmin(admin.ModelAdmin):
-    form = AudioFilesForm
-admin.site.register(models.Upload, UploadAdmin)
+admin.site.register(Permission)
 
 
 class UserProfileInline(admin.StackedInline):
@@ -197,24 +168,10 @@ def add_selection(self, request, queryset):
 add_selection.short_description = "Create new selections"
 
 
-def delete_talents(self, request, queryset):
-    for talent in queryset:
-        talent.delete()
-    self.message_user(request, "Successfully deleted %s talents." % queryset.count())
-    return HttpResponseRedirect('/admin/choices/talent/')
-delete_talents.short_description = "Delete Talents"
-
-
 class TalentAdmin(ImportExportActionModelAdmin):
     form = AudioFileAdminForm
-    actions = [add_selection, delete_talents]
+    actions = [add_selection]
     inlines = [RatingInline]
-
-    def get_queryset(self, request):
-        qs = super(TalentAdmin, self).get_queryset(request)
-        if request.user.userprofile.vendor:
-            qs = qs.filter(vendor__name=request.user.userprofile.vendor.name)
-        return qs
 
     formfield_overrides = {
         dbmodels.TextField: {'widget': forms.Textarea(attrs={'rows': 1, 'cols': 50})},
@@ -236,10 +193,11 @@ class TalentAdmin(ImportExportActionModelAdmin):
     search_fields = ('id', 'welo_id', 'vendor__name', 'language__language')
     list_per_page = 100
 
-    def get_actions(self, request):
-        actions = super(TalentAdmin, self).get_actions(request)
-        del actions['delete_selected']
-        return actions
+    def get_import_formats(self):
+        return [f for f in (base_formats.XLSX,) if f().can_import()]
+
+    def get_export_formats(self):
+        return [f for f in (base_formats.XLSX,) if f().can_import()]
 
     def save_model(self, request, obj, form, change):
         if not obj.audio_file_sha or 'audio_file' in form.changed_data:
@@ -311,6 +269,20 @@ class VendorsTalentAdmin(TalentAdmin):
     resource_class = samples_import.TalentResource
     import_template_name = "multi_file_import.html"
 
+    def get_queryset(self, request):
+        qs = super(TalentAdmin, self).get_queryset(request)
+        if request.user.userprofile.vendor:
+            qs = qs.filter(vendor__name=request.user.userprofile.vendor.name)
+        return qs
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "vendor":
+            kwargs["queryset"] = models.Vendor.objects.filter(username=request.user.userprofile.vendor.username)
+        return super(VendorsTalentAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_skip_admin_log(self):
+        return True
+
     def import_action(self, request, *args, **kwargs):
         """
         Perform a dry_run of the import to make sure the import will not
@@ -360,9 +332,10 @@ class VendorsTalentAdmin(TalentAdmin):
                                           request=request,
                                           data=data,
                                           dry_run=True,
-                                          # raise_errors=False,
-                                          raise_errors=True,
-                                          collect_failed_rows=True,
+                                          raise_errors=False,
+                                          use_transactions=False,
+                                          # raise_errors=True,
+                                          collect_failed_rows=False,
                                           file_name=import_file.name,
                                           user=request.user)
 
@@ -373,7 +346,7 @@ class VendorsTalentAdmin(TalentAdmin):
                     'import_file_name': tmp_storage.name,
                     'original_file_name': import_file.name,
                     'input_format': form.cleaned_data['input_format'],
-                    'sample_files_dict': json.dumps(self.resource_class.sample_files_dict)
+                    'sample_files_dict': json.dumps(self.resource_class.sample_files_dict),
                 })
 
         if django.VERSION >= (1, 8, 0):
@@ -443,6 +416,8 @@ class VendorsTalentAdmin(TalentAdmin):
                                                          opts.model_name,
                                                          pluralize(result.totals[RowResult.IMPORT_TYPE_UPDATE]))
 
+            success_message = u'Import finished'
+
             messages.success(request, success_message)
             tmp_storage.remove()
 
@@ -451,9 +426,4 @@ class VendorsTalentAdmin(TalentAdmin):
             url = reverse('admin:%s_%s_changelist' % self.get_model_info(),
                           current_app=self.admin_site.name)
             return HttpResponseRedirect(url)
-
-
-class TalentsByVendor(models.Talent):
-    class Meta:
-        proxy = True
-admin.site.register(TalentsByVendor, VendorsTalentAdmin)
+admin.site.register(models.TalentsByVendor, VendorsTalentAdmin)

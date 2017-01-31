@@ -8,14 +8,8 @@ from django.db.models import Avg
 from .validators import validate_audiofile_extension, validate_imagefile_extension
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
-
-class Upload(models.Model):
-    name = models.CharField(max_length=256)
-    audio_files = models.FileField(upload_to="bulk_upload/")
-
-    def __unicode__(self):
-        return self.name
+import hashlib
+import os
 
 
 class Client(models.Model):
@@ -149,8 +143,32 @@ class Talent(models.Model):
         return self.selection_set.filter(status="REJECTED").count()
     get_times_rejected.short_description = 'Rejected Total'
 
+    def rename_audio_file(self, new_name):
+        old_path = self.audio_file.path
+        self.audio_file.name = new_name
+        os.rename(old_path, self.audio_file.path)
+        self.save()
+
     def get_audio_file_sha(self):
-        return self.selection_set.filter(status="REJECTED").count()
+        sha = hashlib.sha1()
+        current_file = self.audio_file
+        current_file.seek(0)
+        try:
+            data = None
+            while True:
+                chunk = current_file.read(65536)
+                if chunk:
+                    data = chunk
+                else:
+                    break
+            sha.update(data)
+            sha1 = sha.hexdigest()
+            current_file.seek(0)
+        except Exception as e:
+            print(e)
+            return '0'
+        else:
+            return sha1
 
     def __unicode__(self):
         return self.welo_id
@@ -165,6 +183,12 @@ class Talent(models.Model):
             self.welo_id = self.audio_file.name.split('.')[-2]
         self.average_rating = self.get_average_rating()
         super(Talent, self).save(*args, **kwargs)
+
+
+# Proxy model for Talent to allow viewing by Vendor in Admin
+class TalentsByVendor(Talent):
+    class Meta:
+        proxy = True
 
 
 class Vendor(models.Model):

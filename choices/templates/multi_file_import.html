@@ -82,15 +82,15 @@
           <tr style="color: white; background-color: #94b24d">
                 <td>
                 {% if import_type.grouper == 'new' %}
-                    {% trans "NEW TALENTS WILL BE CREATED FOR THE FOLLOWING: There are no existing talents with the same file names or content" %}
+                    {% trans "NEW TALENTS WILL BE CREATED FOR THE FOLLOWING (NEW): There are no existing talents with the same file names or content" %}
                 {% elif import_type.grouper == 'skip' %}
-                    {% trans "THE FOLLOWING WILL NOT BE IMPORTED: There are no files with these names in the uploaded set" %}
+                    {% trans "THE FOLLOWING WILL NOT BE IMPORTED (SKIP): There are no files with these names in the uploaded set" %}
                 {% elif import_type.grouper == 'duplicate' %}
-                    {% trans "THE FOLLOWING WILL NOT BE IMPORTED: There are already talents with the same names and content as these files" %}
-                {% elif import_type.grouper == 'delete' %}
-                    {% trans "THE FOLLOWING FILES WILL REPLACE THOSE FOR EXISTING TALENTS: Talents exist with the same name but different content from these files" %}
-                {% elif import_type.grouper == 'update' %}
-                    {% trans "THE FOLLOWING FILES WILL BE USED TO UPDATE EXISTING TALENT AND FILE NAMES: Talents exist with the same content but different names than these files" %}
+                    {% trans "THE FOLLOWING WILL NOT BE IMPORTED (DUPLICATE): There are already talents with the same names and content as these files" %}
+                {% elif import_type.grouper == 'replace' %}
+                    {% trans "THE FOLLOWING FILES WILL REPLACE THOSE FOR EXISTING TALENTS (REPLACE): Talents exist with the same name but different content from these files" %}
+                {% elif import_type.grouper == 'update_welo_id' %}
+                    {% trans "THE FOLLOWING FILES WILL BE USED TO UPDATE EXISTING TALENT AND FILE NAMES (UPDATE_WELO_ID): Talents exist with the same content but different names than these files" %}
                 {% else %}
                     {{ import_type.grouper }}{% trans "DO STUFF BASE ON THIS GROUPER" %}
                 {% endif %}
