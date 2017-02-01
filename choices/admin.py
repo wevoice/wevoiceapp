@@ -187,7 +187,8 @@ class TalentAdmin(ImportExportActionModelAdmin):
                    ('vendor', filters.FilteredRelatedOnlyFieldListFilter),
                    ('language', filters.FilteredRelatedOnlyFieldListFilter))
     list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range',
-                    'average_rating', 'get_times_preapproved', 'get_times_accepted', 'get_times_rejected', 'created_at')
+                    'average_rating', 'get_times_preapproved', 'get_times_accepted', 'get_times_rejected', 'created_at',
+                    'updated_at')
     list_display_links = ('id', 'welo_id')
     readonly_fields = ('rate', 'welo_id', 'audio_file_sha', 'average_rating', 'created_at', 'updated_at')
     search_fields = ('id', 'welo_id', 'vendor__name', 'language__language')
@@ -388,6 +389,11 @@ class VendorsTalentAdmin(TalentAdmin):
                                           raise_errors=True,
                                           file_name=confirm_form.cleaned_data['original_file_name'],
                                           user=request.user)
+
+            action_items = self.resource_class.file_actions_dict
+            for key, value in action_items.items():
+                if key in ['new', 'update_welo_id', 'replace']:
+                    print(key + "|" + str(value))
 
             if not self.get_skip_admin_log():
                 # Add imported objects to LogEntry

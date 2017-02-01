@@ -288,3 +288,6 @@ class TalentResource(resources.ModelResource):
         export_order = fields
         instance_loader_class = ModelInstanceLoaderWithSamples
         import_id_fields = ['audio_file']
+
+
+
