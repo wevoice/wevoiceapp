@@ -3,21 +3,11 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.db import models as dbmodels
 from django.shortcuts import render
-from import_export.admin import ImportExportActionModelAdmin
-from . import models, filters, samples_import
+from . import models, filters
 from .forms import SelectClientForm, AudioFileAdminForm
-import django
-import json
+from .samples_import import ImportExportActionWithSamples
 from django.contrib import admin
-from django.template.response import TemplateResponse
-from django.utils.decorators import method_decorator
-from django.views.decorators.http import require_POST
-from django.contrib import messages
-from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from django.utils.encoding import force_text
-from import_export.signals import post_import
-from import_export.formats import base_formats
 
 admin.site.site_title = 'Voiceover Admin'
 admin.site.site_header = 'Voiceover Admin'
@@ -143,7 +133,7 @@ def add_selection(self, request, queryset):
 add_selection.short_description = "Create new selections"
 
 
-class TalentAdmin(ImportExportActionModelAdmin):
+class TalentAdmin(ImportExportActionWithSamples):
     form = AudioFileAdminForm
     actions = [add_selection]
     inlines = [RatingInline]
@@ -162,18 +152,12 @@ class TalentAdmin(ImportExportActionModelAdmin):
                    ('vendor', filters.FilteredRelatedOnlyFieldListFilter),
                    ('language', filters.FilteredRelatedOnlyFieldListFilter))
     list_display = ('id', 'welo_id', 'vendor', 'audio_file_player', 'language', 'type', 'gender', 'age_range',
-                    'average_rating', 'get_times_preapproved', 'get_times_accepted', 'get_times_rejected', 'created_at',
-                    'updated_at')
+                    'created_at', 'updated_at', 'average_rating', 'get_times_preapproved', 'get_times_accepted',
+                    'get_times_rejected')
     list_display_links = ('id', 'welo_id')
     readonly_fields = ('rate', 'welo_id', 'audio_file_sha', 'average_rating', 'created_at', 'updated_at')
     search_fields = ('id', 'welo_id', 'vendor__name', 'language__language')
     list_per_page = 100
-
-    def get_import_formats(self):
-        return [f for f in (base_formats.XLSX,) if f().can_import()]
-
-    def get_export_formats(self):
-        return [f for f in (base_formats.XLSX,) if f().can_import()]
 
     def save_model(self, request, obj, form, change):
         if not obj.audio_file_sha or 'audio_file' in form.changed_data:
@@ -239,142 +223,3 @@ class CommentAdmin(admin.ModelAdmin):
     list_display = ('selection', 'author', 'text', 'comment_client', 'created_date')
     search_fields = ['text', 'author__user__username', 'author__client__username', 'selection__talent__welo_id']
 admin.site.register(models.Comment, CommentAdmin)
-
-
-class VendorsTalentAdmin(TalentAdmin):
-    resource_class = samples_import.TalentResource
-    import_template_name = "multi_file_import.html"
-
-    def get_queryset(self, request):
-        qs = super(TalentAdmin, self).get_queryset(request)
-        if request.user.userprofile.vendor:
-            qs = qs.filter(vendor__name=request.user.userprofile.vendor.name)
-        return qs
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "vendor":
-            kwargs["queryset"] = models.Vendor.objects.filter(username=request.user.userprofile.vendor.username)
-        return super(VendorsTalentAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def import_action(self, request, *args, **kwargs):
-        """
-        Perform a dry_run of the import to make sure the import will not
-        result in errors.  If there where no error, save the user
-        uploaded file to a local temp file that will be used by
-        'process_import' for the actual import.
-        """
-        resource = self.get_import_resource_class()(**self.get_import_resource_kwargs(request, *args, **kwargs))
-
-        context = {}
-        dataset = None
-
-        import_formats = self.get_import_formats()
-        form = samples_import.ImportFormWithSamples(import_formats, request.POST or None, request.FILES or None)
-
-        if request.POST and form.is_valid():
-            input_format = import_formats[
-                int(form.cleaned_data['input_format'])
-            ]()
-            import_file = form.cleaned_data['import_file']
-            # first always write the uploaded file to disk as it may be a
-            # memory file or else based on settings upload handlers
-            tmp_storage = self.get_tmp_storage_class()()
-            data = bytes()
-            for chunk in import_file.chunks():
-                data += chunk
-
-            tmp_storage.save(data, input_format.get_read_mode())
-
-            # then read the file, using the proper format-specific mode
-            # warning, big files may exceed memory
-            try:
-                data = tmp_storage.read(input_format.get_read_mode())
-                if not input_format.is_binary() and self.from_encoding:
-                    data = force_text(data, self.from_encoding)
-                dataset = input_format.create_dataset(data)
-            except UnicodeDecodeError as e:
-                AudioFileAdminForm.print_error(e)
-                # return HttpResponse(_(u"<h1>Imported file has a wrong encoding: %s</h1>" % e))
-            except Exception as e:
-                AudioFileAdminForm.print_error(e)
-                # return HttpResponse(_(u"<h1>%s encountered while trying to read file: %s</h1>" % (type(e).__name__,
-                #                                                                                   import_file.name)))
-
-            # Pass request and data here so that they can be used later
-            result = resource.import_data(dataset,
-                                          request=request,
-                                          data=data,
-                                          dry_run=True,
-                                          raise_errors=False,
-                                          use_transactions=False,
-                                          # raise_errors=True,
-                                          collect_failed_rows=False,
-                                          file_name=import_file.name,
-                                          user=request.user)
-
-            context['result'] = result
-
-            if not result.has_errors():
-                context['confirm_form'] = samples_import.ConfirmImportFormWithSamples(initial={
-                    'import_file_name': tmp_storage.name,
-                    'original_file_name': import_file.name,
-                    'input_format': form.cleaned_data['input_format'],
-                    'sample_files_dict': json.dumps(self.resource_class.sample_files_dict),
-                })
-
-        if django.VERSION >= (1, 8, 0):
-            context.update(self.admin_site.each_context(request))
-        elif django.VERSION >= (1, 7, 0):
-            context.update(self.admin_site.each_context())
-
-        context['title'] = "Import"
-        context['form'] = form
-        context['opts'] = self.model._meta
-        context['fields'] = [f.column_name for f in resource.get_user_visible_fields()]
-
-        request.current_app = self.admin_site.name
-        return TemplateResponse(request, [self.import_template_name],
-                                context)
-
-    def get_success_message(self, result, opts):
-        success_message = 'The following results were processed for %s: ' % opts.model_name
-        for key in result.totals:
-            if result.totals[key] > 0:
-                success_message += "%s -- %s; " % (key, result.totals[key])
-        return success_message
-
-    @method_decorator(require_POST)
-    def process_import(self, request, *args, **kwargs):
-        """
-        Perform the actual import action (after the user has confirmed he
-        wishes to import)
-        """
-        opts = self.model._meta
-        resource = self.get_import_resource_class()(**self.get_import_resource_kwargs(request, *args, **kwargs))
-
-        confirm_form = samples_import.ConfirmImportFormWithSamples(request.POST)
-        if confirm_form.is_valid():
-            import_formats = self.get_import_formats()
-            input_format = import_formats[
-                int(confirm_form.cleaned_data['input_format'])
-            ]()
-            tmp_storage = self.get_tmp_storage_class()(name=confirm_form.cleaned_data['import_file_name'])
-            data = tmp_storage.read(input_format.get_read_mode())
-            if not input_format.is_binary() and self.from_encoding:
-                data = force_text(data, self.from_encoding)
-            dataset = input_format.create_dataset(data)
-
-            result = resource.import_data(dataset, dry_run=False,
-                                          raise_errors=True,
-                                          file_name=confirm_form.cleaned_data['original_file_name'],
-                                          user=request.user)
-
-            messages.success(request, self.get_success_message(result, opts))
-            tmp_storage.remove()
-
-            post_import.send(sender=None, model=self.model)
-
-            url = reverse('admin:%s_%s_changelist' % self.get_model_info(),
-                          current_app=self.admin_site.name)
-            return HttpResponseRedirect(url)
-admin.site.register(models.TalentsByVendor, VendorsTalentAdmin)

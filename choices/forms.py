@@ -91,6 +91,9 @@ class AudioFileAdminForm(forms.ModelForm):
             current_file_sha = self.current_file_sha(current_file)
             destination = settings.MEDIA_ROOT
             match_qs = Talent.objects.filter(audio_file_sha=current_file_sha)
+            if " " in current_file.name:
+                raise forms.ValidationError('There are spaces in the file name for %s. '
+                                            'Please rename the file and try again' % current_file.name)
             if match_qs.count() > 0:
                 raise forms.ValidationError('This is the same content as the sample for talent ' + match_qs[0].welo_id)
             if os.path.isfile(destination + current_file.name):

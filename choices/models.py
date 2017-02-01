@@ -185,12 +185,6 @@ class Talent(models.Model):
         super(Talent, self).save(*args, **kwargs)
 
 
-# Proxy model for Talent to allow viewing by Vendor in Admin
-class TalentsByVendor(Talent):
-    class Meta:
-        proxy = True
-
-
 class Vendor(models.Model):
     name = models.TextField()
     username = models.TextField()

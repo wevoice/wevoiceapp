@@ -1,16 +1,27 @@
-import json
 import openpyxl
 import os
 import traceback
+import django
+import json
 from collections import OrderedDict
 from copy import deepcopy
 from django import forms
+from django.http import HttpResponseRedirect
+from django.template.response import TemplateResponse
+from django.utils.decorators import method_decorator
+from django.utils.encoding import force_text
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from django.core.urlresolvers import reverse
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.transaction import TransactionManagementError
 from import_export import fields
 from import_export import resources
+from import_export.admin import ImportExportActionModelAdmin
+from import_export.formats.base_formats import XLSX
+from import_export.signals import post_import
 from import_export.resources import Diff
 from import_export.results import Result, RowResult
 from import_export.widgets import ForeignKeyWidget
@@ -238,3 +249,143 @@ class TalentResource(resources.ModelResource):
         fields = ('audio_file', 'gender', 'code')
         export_order = fields
         import_id_fields = ['audio_file']
+
+
+class ImportExportActionWithSamples(ImportExportActionModelAdmin):
+    resource_class = TalentResource
+    import_template_name = "multi_file_import.html"
+    change_list_template = "change_list_selective_import.html"
+    formats = (XLSX,)
+
+    def get_queryset(self, request):
+        qs = super(ImportExportActionWithSamples, self).get_queryset(request)
+        if request.user.userprofile.vendor:
+            qs = qs.filter(vendor__name=request.user.userprofile.vendor.name)
+        return qs
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "vendor":
+            kwargs["queryset"] = models.Vendor.objects.filter(username=request.user.userprofile.vendor.username)
+        return super(ImportExportActionWithSamples, self).formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def import_action(self, request, *args, **kwargs):
+        """
+        Perform a dry_run of the import to make sure the import will not
+        result in errors.  If there where no error, save the user
+        uploaded file to a local temp file that will be used by
+        'process_import' for the actual import.
+        """
+        resource = self.get_import_resource_class()(**self.get_import_resource_kwargs(request, *args, **kwargs))
+
+        context = {}
+        dataset = None
+
+        import_formats = self.get_import_formats()
+        form = ImportFormWithSamples(import_formats, request.POST or None, request.FILES or None)
+
+        if request.POST and form.is_valid():
+            input_format = import_formats[
+                int(form.cleaned_data['input_format'])
+            ]()
+            import_file = form.cleaned_data['import_file']
+            # first always write the uploaded file to disk as it may be a
+            # memory file or else based on settings upload handlers
+            tmp_storage = self.get_tmp_storage_class()()
+            data = bytes()
+            for chunk in import_file.chunks():
+                data += chunk
+
+            tmp_storage.save(data, input_format.get_read_mode())
+
+            # then read the file, using the proper format-specific mode
+            # warning, big files may exceed memory
+            try:
+                data = tmp_storage.read(input_format.get_read_mode())
+                if not input_format.is_binary() and self.from_encoding:
+                    data = force_text(data, self.from_encoding)
+                dataset = input_format.create_dataset(data)
+            except UnicodeDecodeError as e:
+                AudioFileAdminForm.print_error(e)
+                # return HttpResponse(_(u"<h1>Imported file has a wrong encoding: %s</h1>" % e))
+            except Exception as e:
+                AudioFileAdminForm.print_error(e)
+                # return HttpResponse(_(u"<h1>%s encountered while trying to read file: %s</h1>" % (type(e).__name__,
+                #                                                                                   import_file.name)))
+
+            # Pass request and data here so that they can be used later
+            result = resource.import_data(dataset,
+                                          request=request,
+                                          data=data,
+                                          dry_run=True,
+                                          raise_errors=False,
+                                          use_transactions=False,
+                                          # raise_errors=True,
+                                          collect_failed_rows=False,
+                                          file_name=import_file.name,
+                                          user=request.user)
+
+            context['result'] = result
+
+            if not result.has_errors():
+                context['confirm_form'] = ConfirmImportFormWithSamples(initial={
+                    'import_file_name': tmp_storage.name,
+                    'original_file_name': import_file.name,
+                    'input_format': form.cleaned_data['input_format'],
+                    'sample_files_dict': json.dumps(self.resource_class.sample_files_dict),
+                })
+
+        if django.VERSION >= (1, 8, 0):
+            context.update(self.admin_site.each_context(request))
+        elif django.VERSION >= (1, 7, 0):
+            context.update(self.admin_site.each_context())
+
+        context['title'] = "Import"
+        context['form'] = form
+        context['opts'] = self.model._meta
+        context['fields'] = [f.column_name for f in resource.get_user_visible_fields()]
+
+        request.current_app = self.admin_site.name
+        return TemplateResponse(request, [self.import_template_name],
+                                context)
+
+    def get_success_message(self, result, opts):
+        success_message = 'The following results were processed for %s: ' % opts.model_name
+        for key in result.totals:
+            if result.totals[key] > 0:
+                success_message += "%s -- %s; " % (key, result.totals[key])
+        return success_message
+
+    @method_decorator(require_POST)
+    def process_import(self, request, *args, **kwargs):
+        """
+        Perform the actual import action (after the user has confirmed he
+        wishes to import)
+        """
+        opts = self.model._meta
+        resource = self.get_import_resource_class()(**self.get_import_resource_kwargs(request, *args, **kwargs))
+
+        confirm_form = ConfirmImportFormWithSamples(request.POST)
+        if confirm_form.is_valid():
+            import_formats = self.get_import_formats()
+            input_format = import_formats[
+                int(confirm_form.cleaned_data['input_format'])
+            ]()
+            tmp_storage = self.get_tmp_storage_class()(name=confirm_form.cleaned_data['import_file_name'])
+            data = tmp_storage.read(input_format.get_read_mode())
+            if not input_format.is_binary() and self.from_encoding:
+                data = force_text(data, self.from_encoding)
+            dataset = input_format.create_dataset(data)
+
+            result = resource.import_data(dataset, dry_run=False,
+                                          raise_errors=True,
+                                          file_name=confirm_form.cleaned_data['original_file_name'],
+                                          user=request.user)
+
+            messages.success(request, self.get_success_message(result, opts))
+            tmp_storage.remove()
+
+            post_import.send(sender=None, model=self.model)
+
+            url = reverse('admin:%s_%s_changelist' % self.get_model_info(),
+                          current_app=self.admin_site.name)
+            return HttpResponseRedirect(url)
