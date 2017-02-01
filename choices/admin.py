@@ -337,10 +337,10 @@ class VendorsTalentAdmin(TalentAdmin):
                                 context)
 
     def get_success_message(self, result, opts):
-        success_message = 'The following changes were made to %s: ' % opts.model_name
+        success_message = 'The following results were processed for %s: ' % opts.model_name
         for key in result.totals:
             if result.totals[key] > 0:
-                success_message += "%s-- %s; " % (key, result.totals[key])
+                success_message += "%s -- %s; " % (key, result.totals[key])
         return success_message
 
     @method_decorator(require_POST)
