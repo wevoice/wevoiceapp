@@ -1,0 +1,8 @@
+{% extends "admin/import_export/change_list.html" %}
+
+{% block object-tools-items %}
+    {% if request.user.userprofile.vendor %}
+        {% include "admin/import_export/change_list_import_item.html" %}
+    {% endif %}
+  {{ block.super }}
+{% endblock %}
