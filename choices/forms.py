@@ -2,10 +2,11 @@ import os
 import sys
 import hashlib
 from django import forms
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
-from .models import Client
+from .models import Client, Talent
 
 
 class LoginForm(forms.Form):
@@ -82,7 +83,22 @@ class SelectClientForm(forms.Form):
     client = forms.ModelChoiceField(Client.objects)
 
 
-class BaseAudioForm(forms.ModelForm):
+class AudioFileAdminForm(forms.ModelForm):
+
+    def clean_audio_file(self):
+        if "audio_file" in self.changed_data:
+            current_file = self.cleaned_data.get("audio_file")
+            current_file_sha = self.current_file_sha(current_file)
+            destination = settings.MEDIA_ROOT
+            match_qs = Talent.objects.filter(audio_file_sha=current_file_sha)
+            if match_qs.count() > 0:
+                raise forms.ValidationError('This is the same content as the sample for talent ' + match_qs[0].welo_id)
+            if os.path.isfile(destination + current_file.name):
+                raise forms.ValidationError('A file named '
+                                            + current_file.name +
+                                            ' already exists. Please rename your file and try again.')
+            else:
+                return self.cleaned_data["audio_file"]
 
     @staticmethod
     def print_error(e):

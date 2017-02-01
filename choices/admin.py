@@ -1,31 +1,23 @@
-import os
 from django import forms
-from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
 from django.db import models as dbmodels
 from django.shortcuts import render
 from import_export.admin import ImportExportActionModelAdmin
 from . import models, filters, samples_import
-from .forms import SelectClientForm, BaseAudioForm
+from .forms import SelectClientForm, AudioFileAdminForm
 import django
 import json
 from django.contrib import admin
 from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
-from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
-from django.contrib.contenttypes.models import ContentType
-from django.template.defaultfilters import pluralize
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils.encoding import force_text
-from django.utils.translation import ugettext_lazy as _
 from import_export.signals import post_import
-from import_export.results import RowResult
 from import_export.formats import base_formats
-
 
 admin.site.site_title = 'Voiceover Admin'
 admin.site.site_header = 'Voiceover Admin'
@@ -95,23 +87,6 @@ class LanguageAdmin(admin.ModelAdmin):
 admin.site.register(models.Language, LanguageAdmin)
 
 
-class AudioFileAdminForm(BaseAudioForm):
-    def clean_audio_file(self):
-        if "audio_file" in self.changed_data:
-            current_file = self.cleaned_data.get("audio_file")
-            current_file_sha = self.current_file_sha(current_file)
-            destination = settings.MEDIA_ROOT
-            match_qs = models.Talent.objects.filter(audio_file_sha=current_file_sha)
-            if match_qs.count() > 0:
-                raise forms.ValidationError('This is the same content as the sample for talent ' + match_qs[0].welo_id)
-            if os.path.isfile(destination + current_file.name):
-                raise forms.ValidationError('A file named '
-                                            + current_file.name +
-                                            ' already exists. Please rename your file and try again.')
-            else:
-                return self.cleaned_data["audio_file"]
-
-
 class RatingAdmin(admin.ModelAdmin):
     list_display = ('id', 'rating', 'talent', 'rater')
     list_filter = (
@@ -151,7 +126,7 @@ def add_selection(self, request, queryset):
                         new_selection.save()
                         count += 1
                 except Exception as e:
-                    BaseAudioForm.print_error(e)
+                    AudioFileAdminForm.print_error(e)
 
             plural = ''
             if count != 1:
@@ -281,9 +256,6 @@ class VendorsTalentAdmin(TalentAdmin):
             kwargs["queryset"] = models.Vendor.objects.filter(username=request.user.userprofile.vendor.username)
         return super(VendorsTalentAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
-    def get_skip_admin_log(self):
-        return True
-
     def import_action(self, request, *args, **kwargs):
         """
         Perform a dry_run of the import to make sure the import will not
@@ -321,10 +293,10 @@ class VendorsTalentAdmin(TalentAdmin):
                     data = force_text(data, self.from_encoding)
                 dataset = input_format.create_dataset(data)
             except UnicodeDecodeError as e:
-                BaseAudioForm.print_error(e)
+                AudioFileAdminForm.print_error(e)
                 # return HttpResponse(_(u"<h1>Imported file has a wrong encoding: %s</h1>" % e))
             except Exception as e:
-                BaseAudioForm.print_error(e)
+                AudioFileAdminForm.print_error(e)
                 # return HttpResponse(_(u"<h1>%s encountered while trying to read file: %s</h1>" % (type(e).__name__,
                 #                                                                                   import_file.name)))
 
@@ -355,7 +327,7 @@ class VendorsTalentAdmin(TalentAdmin):
         elif django.VERSION >= (1, 7, 0):
             context.update(self.admin_site.each_context())
 
-        context['title'] = _("Import")
+        context['title'] = "Import"
         context['form'] = form
         context['opts'] = self.model._meta
         context['fields'] = [f.column_name for f in resource.get_user_visible_fields()]
@@ -363,6 +335,13 @@ class VendorsTalentAdmin(TalentAdmin):
         request.current_app = self.admin_site.name
         return TemplateResponse(request, [self.import_template_name],
                                 context)
+
+    def get_success_message(self, result, opts):
+        success_message = 'The following changes were made to %s: ' % opts.model_name
+        for key in result.totals:
+            if result.totals[key] > 0:
+                success_message += "%s-- %s; " % (key, result.totals[key])
+        return success_message
 
     @method_decorator(require_POST)
     def process_import(self, request, *args, **kwargs):
@@ -390,41 +369,7 @@ class VendorsTalentAdmin(TalentAdmin):
                                           file_name=confirm_form.cleaned_data['original_file_name'],
                                           user=request.user)
 
-            action_items = self.resource_class.file_actions_dict
-            for key, value in action_items.items():
-                if key in ['new', 'update_welo_id', 'replace']:
-                    print(key + "|" + str(value))
-
-            if not self.get_skip_admin_log():
-                # Add imported objects to LogEntry
-                logentry_map = {
-                    RowResult.IMPORT_TYPE_NEW: ADDITION,
-                    RowResult.IMPORT_TYPE_UPDATE: CHANGE,
-                    RowResult.IMPORT_TYPE_DELETE: DELETION,
-                }
-                content_type_id = ContentType.objects.get_for_model(self.model).pk
-                for row in result:
-                    if row.import_type != row.IMPORT_TYPE_ERROR and row.import_type != row.IMPORT_TYPE_SKIP:
-                        LogEntry.objects.log_action(
-                            user_id=request.user.pk,
-                            content_type_id=content_type_id,
-                            object_id=row.object_id,
-                            object_repr=row.object_repr,
-                            action_flag=logentry_map[row.import_type],
-                            change_message="%s through import_export" % row.import_type,
-                        )
-
-            success_message = u'Import finished, with {} new {}{} and ' \
-                              u'{} updated {}{}.'.format(result.totals[RowResult.IMPORT_TYPE_NEW],
-                                                         opts.model_name,
-                                                         pluralize(result.totals[RowResult.IMPORT_TYPE_NEW]),
-                                                         result.totals[RowResult.IMPORT_TYPE_UPDATE],
-                                                         opts.model_name,
-                                                         pluralize(result.totals[RowResult.IMPORT_TYPE_UPDATE]))
-
-            success_message = u'Import finished'
-
-            messages.success(request, success_message)
+            messages.success(request, self.get_success_message(result, opts))
             tmp_storage.remove()
 
             post_import.send(sender=None, model=self.model)

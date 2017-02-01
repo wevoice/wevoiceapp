@@ -9,18 +9,16 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.transaction import TransactionManagementError
-from django.utils.translation import ugettext_lazy as _
 from import_export import fields
 from import_export import resources
 from import_export.resources import Diff
 from import_export.results import Result, RowResult
 from import_export.widgets import ForeignKeyWidget
 from import_export.forms import ImportForm, ConfirmImportForm
-from import_export.instance_loaders import ModelInstanceLoader
 from import_export.tmp_storages import TempFolderStorage
 from tablib import Dataset
 from . import models
-from .forms import BaseAudioForm
+from .forms import AudioFileAdminForm
 
 
 # Set default logging handler to avoid "No handler found" warnings.
@@ -38,7 +36,7 @@ logging.getLogger(__name__).addHandler(NullHandler())
 class ImportFormWithSamples(ImportForm):
     sample_files = forms.FileField(
         widget=forms.ClearableFileInput(attrs={'multiple': True}, ),
-        label=_('Sample Files'),
+        label='Sample Files',
         required=False
     )
 
@@ -48,27 +46,6 @@ class ConfirmImportFormWithSamples(ConfirmImportForm):
 
     def clean_sample_files_dict(self):
         return json.loads(self.cleaned_data['sample_files_dict'])
-
-
-class ModelInstanceLoaderWithSamples(ModelInstanceLoader):
-    """
-    Instance loader for Django model.
-
-    Lookup for model instance by ``import_id_fields``.
-    """
-
-    def get_queryset(self):
-        return self.resource._meta.model.objects.all()
-
-    def get_instance(self, row):
-        try:
-            params = {}
-            for key in self.resource.get_import_id_fields():
-                field = self.resource.fields[key]
-                params[field.attribute] = field.clean(row)
-            return self.get_queryset().get(**params)
-        except self.resource._meta.model.DoesNotExist:
-            return None
 
 
 def new_row_result_init(self):
@@ -81,7 +58,6 @@ def new_row_result_init(self):
 
 RowResult.IMPORT_TYPE_DUPLICATE = 'duplicate'
 RowResult.IMPORT_TYPE_REPLACE = 'replace'
-RowResult.IMPORT_TYPE_UPDATE_WELO_ID = 'update_welo_id'
 RowResult.__init__ = new_row_result_init
 
 
@@ -95,7 +71,6 @@ def new_result_init(self, *args, **kwargs):
     self.failed_dataset = Dataset()
     self.totals = OrderedDict([(RowResult.IMPORT_TYPE_NEW, 0),
                                (RowResult.IMPORT_TYPE_UPDATE, 0),
-                               (RowResult.IMPORT_TYPE_UPDATE_WELO_ID, 0),
                                (RowResult.IMPORT_TYPE_DELETE, 0),
                                (RowResult.IMPORT_TYPE_SKIP, 0),
                                (RowResult.IMPORT_TYPE_DUPLICATE, 0),
@@ -108,7 +83,7 @@ Result.__init__ = new_result_init
 
 class TalentResource(resources.ModelResource):
     sample_files_dict = {}
-    file_actions_dict = {'skip_import': [], 'duplicate': [], 'replace': {}, 'update_welo_id': {}, 'new': {}}
+    file_actions_dict = {'skip': [], 'duplicate': [], 'replace': {}, 'update': {}, 'new': {}}
     retrieved_sample_files_dict = {}
 
     def create_samples_dataset(self, in_stream):
@@ -122,10 +97,10 @@ class TalentResource(resources.ModelResource):
         for row in rows:
             # File is missing from uploaded fileset
             if not row[0].value in self.sample_files_dict:
-                self.file_actions_dict['skip_import'].append(row[0].value)
+                self.file_actions_dict['skip'].append(row[0].value)
             else:
                 existing_talent = models.Talent.objects.filter(audio_file=row[0].value)
-                import_file_sha = BaseAudioForm.current_file_sha(File(open(self.sample_files_dict[row[0].value])))
+                import_file_sha = AudioFileAdminForm.current_file_sha(File(open(self.sample_files_dict[row[0].value])))
                 t_with_matching_file_sha = models.Talent.objects.filter(audio_file_sha=import_file_sha)
                 if existing_talent.exists():
                     # Talent with same name and content already exists
@@ -137,7 +112,7 @@ class TalentResource(resources.ModelResource):
                         self.file_actions_dict['replace'][row[0].value] = existing_talent[0].welo_id
                 # Talent with same content but different name already exists
                 elif t_with_matching_file_sha and t_with_matching_file_sha.exists():
-                    self.file_actions_dict['update_welo_id'][row[0].value] = t_with_matching_file_sha[0].welo_id
+                    self.file_actions_dict['update'][row[0].value] = t_with_matching_file_sha[0].welo_id
                 else:
                     self.file_actions_dict['new'][row[0].value] = import_file_sha
 
@@ -162,62 +137,32 @@ class TalentResource(resources.ModelResource):
                 print(e)
             self.sample_files_dict[sample_file.name] = samples_tmp_storage.name
 
-    def save_file_actions_dict(self):
-        self.sample_files_dict['file_actions'] = self.file_actions_dict
-
     def before_import(self, dataset, using_transactions, dry_run, **kwargs):
         if 'request' in kwargs:
             sample_files = kwargs.pop('request').FILES.getlist('sample_files')
             self.save_sample_files(sample_files)
             self.create_samples_dataset(kwargs.pop('data'))
-            self.save_file_actions_dict()
         else:
             self.retrieve_stored_sample_files()
 
-    def get_or_init_instance(self, instance_loader, row):
-        """
-        Either fetches an already existing instance or initializes a new one.
-        """
-        instance = self.get_instance(instance_loader, row)
-        if instance:
-            return instance, False
-        else:
-            return self.init_instance(row), True
-
     def import_row(self, row, instance_loader, using_transactions=True, dry_run=False, **kwargs):
         """
-        Imports data from ``tablib.Dataset``. Refer to :doc:`import_workflow`
-        for a more complete description of the whole import process.
-
-        :param self: Originally "self" would be a TalentResource object.
-            Optional methods: self.before_import_row(row, **kwargs),
-            self.after_import_instance(instance, new, **kwargs),
-            self.after_import_row(row, row_result, **kwargs)
-
-        :param row: A ``dict`` of the row to import
-
-        :param instance_loader: The instance loader to be used to load the row
-
-        :param using_transactions: If ``using_transactions`` is set, a transaction
-            is being used to wrap the import
-
-        :param dry_run: If ``dry_run`` is set, or error occurs, transaction
-            will be rolled back.
+        Refer to parent class for usages
         """
         instance, new = self.get_or_init_instance(instance_loader, row)
         row_result = self.get_row_result_class()()
         new_file = row['audio_file']
         row_result.import_type = RowResult.IMPORT_TYPE_ERROR
         try:
-            if new_file in self.file_actions_dict['skip_import']:
+            if new_file in self.file_actions_dict['skip']:
                 row_result.import_type = RowResult.IMPORT_TYPE_SKIP
             elif new_file in self.file_actions_dict['duplicate']:
                 row_result.import_type = RowResult.IMPORT_TYPE_DUPLICATE
             elif new_file in self.file_actions_dict['replace'].keys():
                 row_result.import_type = RowResult.IMPORT_TYPE_REPLACE
-            elif new_file in self.file_actions_dict['update_welo_id'].keys():
-                row_result.import_type = RowResult.IMPORT_TYPE_UPDATE_WELO_ID
-                row_result.update_talent = self.file_actions_dict['update_welo_id'][new_file]
+            elif new_file in self.file_actions_dict['update'].keys():
+                row_result.import_type = RowResult.IMPORT_TYPE_UPDATE
+                row_result.update_talent = self.file_actions_dict['update'][new_file]
             elif new_file in self.file_actions_dict['new'].keys():
                 row_result.import_type = RowResult.IMPORT_TYPE_NEW
             elif not new:
@@ -232,16 +177,14 @@ class TalentResource(resources.ModelResource):
                     self.save_instance(instance, using_transactions, dry_run)
                 else:
                     if row_result.import_type == "new":
-                        print("New: %s" % new_file)
                         instance.vendor = kwargs['user'].userprofile.vendor
                         instance.type = 'PRO'
                         instance.audio_file.save(os.path.basename(new_file),
                                                  ContentFile(self.retrieved_sample_files_dict[new_file]))
                         instance.audio_file_sha = self.file_actions_dict['new'][new_file]
                         instance.save()
-                    elif row_result.import_type == "update_welo_id":
-                        file_to_update = self.file_actions_dict['update_welo_id'][new_file]
-                        print("Update file and welo_id: new file -- %s Welo ID -- %s" % (new_file, file_to_update))
+                    elif row_result.import_type == "update":
+                        file_to_update = self.file_actions_dict['update'][new_file]
                         talent_to_update = models.Talent.objects.filter(welo_id=file_to_update)[0]
                         old_path = talent_to_update.audio_file.path
                         if talent_to_update.vendor != kwargs['user'].userprofile.vendor:
@@ -253,16 +196,24 @@ class TalentResource(resources.ModelResource):
                             os.remove(old_path)
                         talent_to_update.save()
                     elif row_result.import_type == "duplicate":
-                        print("Duplicate (pass): %s" % new_file)
+                        pass
                     elif row_result.import_type == "replace":
-                        talent_to_update = self.file_actions_dict['replace'][new_file]
-                        print("Replace: %s" % new_file)
+                        talent_to_replace = self.file_actions_dict['replace'][new_file]
+                        talent_to_replace = models.Talent.objects.filter(welo_id=talent_to_replace)[0]
+                        if talent_to_replace.vendor != kwargs['user'].userprofile.vendor:
+                            talent_to_replace.vendor = kwargs['user'].userprofile.vendor
+                        old_path = talent_to_replace.audio_file.path
+                        if os.path.exists(old_path):
+                            os.remove(old_path)
+                        talent_to_replace.audio_file.save(os.path.basename(new_file),
+                                                          ContentFile(self.retrieved_sample_files_dict[new_file]))
+                        talent_to_replace.audio_file_sha = talent_to_replace.get_audio_file_sha()
+                        talent_to_replace.save()
                     elif row_result.import_type == "skip":
-                        print("File not uploaded (pass): %s" % new_file)
+                        pass
             diff.compare_with(self, instance, dry_run)
             if row_result.update_talent:
                 diff.right[0] = "%s (%s)" % (diff.right[0], row_result.update_talent)
-
             row_result.diff = diff.as_html()
             self.after_import_row(row, row_result, **kwargs)
         except Exception as e:
@@ -286,8 +237,4 @@ class TalentResource(resources.ModelResource):
         report_skipped = True
         fields = ('audio_file', 'gender', 'code')
         export_order = fields
-        instance_loader_class = ModelInstanceLoaderWithSamples
         import_id_fields = ['audio_file']
-
-
-
