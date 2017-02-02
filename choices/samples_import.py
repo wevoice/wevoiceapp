@@ -265,7 +265,8 @@ class ImportExportActionWithSamples(ImportExportActionModelAdmin):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "vendor":
-            kwargs["queryset"] = models.Vendor.objects.filter(username=request.user.userprofile.vendor.username)
+            if request.user.userprofile.vendor:
+                kwargs["queryset"] = models.Vendor.objects.filter(username=request.user.userprofile.vendor.username)
         return super(ImportExportActionWithSamples, self).formfield_for_foreignkey(db_field, request, **kwargs)
 
     def import_action(self, request, *args, **kwargs):
