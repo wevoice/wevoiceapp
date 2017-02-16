@@ -7,7 +7,7 @@ from os.path import join as join_path
 
 
 class Command(BaseCommand):
-    help = 'Creates an Excel sheet to be used for import'
+    help = 'Flattens files in a directory'
     talentdata = []
 
     def add_arguments(self, parser):

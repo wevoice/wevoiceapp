@@ -77,16 +77,6 @@ class LanguageAdmin(admin.ModelAdmin):
 admin.site.register(models.Language, LanguageAdmin)
 
 
-class RatingAdmin(admin.ModelAdmin):
-    list_display = ('id', 'rating', 'talent', 'rater')
-    list_filter = (
-        ('rating', filters.FilteredAllValuesFieldListFilter),
-        ('rater', filters.FilteredRelatedOnlyFieldListFilter)
-    )
-    search_fields = ('talent__welo_id',)
-admin.site.register(models.Rating, RatingAdmin)
-
-
 class RatingInline(admin.StackedInline):
     model = models.Rating
     readonly_fields = ('rater', 'talent', 'rating')
@@ -216,10 +206,29 @@ class SelectionAdmin(admin.ModelAdmin):
 admin.site.register(models.Selection, SelectionAdmin)
 
 
-class CommentAdmin(admin.ModelAdmin):
+class ReadOnlyModelAdmin(admin.ModelAdmin):
+    actions = None
+    list_display_links = None
+    # more stuff here
+
+    def has_add_permission(self, request):
+        return False
+
+
+class CommentAdmin(ReadOnlyModelAdmin):
     list_filter = (
         ('author', filters.FilteredRelatedOnlyFieldListFilter),
     )
     list_display = ('selection', 'author', 'text', 'comment_client', 'created_date')
     search_fields = ['text', 'author__user__username', 'author__client__username', 'selection__talent__welo_id']
 admin.site.register(models.Comment, CommentAdmin)
+
+
+class RatingAdmin(ReadOnlyModelAdmin):
+    list_display = ('id', 'rating', 'talent', 'rater')
+    list_filter = (
+        ('rating', filters.FilteredAllValuesFieldListFilter),
+        ('rater', filters.FilteredRelatedOnlyFieldListFilter)
+    )
+    search_fields = ('talent__welo_id',)
+admin.site.register(models.Rating, RatingAdmin)
