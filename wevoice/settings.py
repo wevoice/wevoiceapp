@@ -140,7 +140,7 @@ IMPORT_EXPORT_USE_TRANSACTIONS = False
 IMPORT_EXPORT_SKIP_ADMIN_LOG = False
 
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5000000
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50000000
 
 ADMINS = (('admin','burton.wj@gmail.com'),)
 EMAIL_USE_TLS = True
@@ -165,21 +165,11 @@ LOGGING = {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
-        },
-        'file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': '/var/log/django.log',
-        },
+        }
     },
     'loggers': {
         'django.request': {
             'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
-        'django': {
-            'handlers': ['file'],
             'level': 'ERROR',
             'propagate': True,
         },
