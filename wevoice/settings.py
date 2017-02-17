@@ -140,7 +140,7 @@ IMPORT_EXPORT_SKIP_ADMIN_LOG = False
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50000000
 
-ADMINS = (('admin','burton.wj@gmail.com'),)
+ADMINS = (('admin', 'burton.wj@gmail.com'),)
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 SERVER_EMAIL = 'burton.wj@gmail.com'
@@ -163,13 +163,13 @@ LOGGING = {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
-        },
+        }
     },
     'loggers': {
         'django.request': {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
             'propagate': True,
-        },
+        }
     }
 }
