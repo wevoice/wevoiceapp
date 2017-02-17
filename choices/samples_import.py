@@ -320,7 +320,6 @@ class ImportExportActionWithSamples(ImportExportActionModelAdmin):
                                           dry_run=True,
                                           raise_errors=False,
                                           use_transactions=False,
-                                          # raise_errors=True,
                                           collect_failed_rows=False,
                                           file_name=import_file.name,
                                           user=request.user)
@@ -378,7 +377,7 @@ class ImportExportActionWithSamples(ImportExportActionModelAdmin):
             dataset = input_format.create_dataset(data)
 
             result = resource.import_data(dataset, dry_run=False,
-                                          raise_errors=True,
+                                          raise_errors=False,
                                           file_name=confirm_form.cleaned_data['original_file_name'],
                                           user=request.user)
 
