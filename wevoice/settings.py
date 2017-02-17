@@ -121,8 +121,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
 
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
-
 LOGIN_URL = '/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 
@@ -139,7 +137,7 @@ VALID_SOUND_FORMATS = ['mp3', 'm4a', 'wav']
 IMPORT_EXPORT_USE_TRANSACTIONS = False
 IMPORT_EXPORT_SKIP_ADMIN_LOG = False
 
-
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50000000
 
 ADMINS = (('admin','burton.wj@gmail.com'),)
@@ -165,7 +163,7 @@ LOGGING = {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
-        }
+        },
     },
     'loggers': {
         'django.request': {
