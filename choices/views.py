@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
 from .validators import validate_user_is_authorized
+from django.db.models import Q
 
 
 def url_redirect(request):
@@ -161,13 +162,37 @@ def get_selections(client, status):
     if all_selections.count() == 0:
         no_selections = True
     selection_types = []
-    for type_filter in ["PRO", "HR", "TTS"]:
-        currentselections = all_selections.filter(talent__type=type_filter)
-        if currentselections.exists():
-            selection_types.append({
-                'selections': currentselections,
-                'type': type_filter
-            })
+    if client.name == 'Nike':
+        for type_filter in ["PRO", "HR", "TTS"]:
+            if type_filter == "PRO":
+                currentselections = all_selections.filter(talent__type=type_filter).exclude(talent__vendor__name='2002 Studios')
+                if currentselections.exists():
+                    selection_types.append({
+                        'selections': currentselections,
+                        'type': type_filter
+                    })
+            elif type_filter == "HR":
+                currentselections = all_selections.filter(Q(talent__type=type_filter) | (Q(talent__type="PRO") & Q(talent__vendor__name='2002 Studios')))
+                if currentselections.exists():
+                    selection_types.append({
+                        'selections': currentselections,
+                        'type': type_filter
+                    })
+            elif type_filter == "TTS":
+                currentselections = all_selections.filter(talent__type=type_filter)
+                if currentselections.exists():
+                    selection_types.append({
+                        'selections': currentselections,
+                        'type': type_filter
+                    })
+    else:
+        for type_filter in ["PRO", "HR", "TTS"]:
+            currentselections = all_selections.filter(talent__type=type_filter)
+            if currentselections.exists():
+                selection_types.append({
+                    'selections': currentselections,
+                    'type': type_filter
+                })
     return no_selections, selection_types
 
 
